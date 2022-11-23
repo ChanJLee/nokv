@@ -229,6 +229,15 @@ namespace nkv {
             size_t size = sysconf(_SC_PAGESIZE);
             st.st_size = size;
             byte *buf = (byte *) malloc(size);
+            buf[0] = 'n';
+            buf[1] = 'k';
+            buf[2] = 'v';
+            buf[3] = '\n';
+            // order
+            uint16_t magic = 0x1234;
+            memcpy(buf + 4, &magic, sizeof(magic));
+            magic = 0x0100;
+            memcpy(buf + 4 + sizeof(magic), &magic, sizeof(magic));
             ::write(fd, buf, size);
             free(buf);
             fsync(fd);

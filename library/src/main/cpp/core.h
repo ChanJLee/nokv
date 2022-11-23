@@ -25,12 +25,6 @@ namespace nkv {
         KV(int fd, int capacity, void *mem) : lock_(fd), fd_(fd),
                                               map_(reinterpret_cast<Map *>(mem)),
                                               capacity_(capacity) {
-            map_->magic_[0] = 'n';
-            map_->magic_[1] = 'k';
-            map_->magic_[2] = 'v';
-            map_->magic_[3] = '\n';
-            map_->order = 0x1234;
-            map_->version_ = 0x0100;
         }
 
     public:
