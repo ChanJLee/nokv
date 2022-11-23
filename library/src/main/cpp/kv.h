@@ -10,16 +10,11 @@
 namespace nkv {
     typedef unsigned char byte;
 
-    struct EntryHeader {
-        byte *key_;
-        byte type_;
-    };
-
-    struct MapHeader {
+    struct Map {
         char magic_[4] = {'n', 'k', 'v', '~'};
         int version_ = 0x12340100;
         uint16_t crc_;
-        int size_;
+        size_t size_;
     };
 }
 
