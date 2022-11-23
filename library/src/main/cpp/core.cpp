@@ -259,7 +259,6 @@ namespace nkv {
         ptrdiff_t ptr = reinterpret_cast<ptrdiff_t>(mem);
         LOGD("mem align %d, %d, %d", ptr % sizeof(Map), ptr, sizeof(Map));
 #endif
-        // todo check map
 
         KV *kv = new KV(fd, st.st_size, mem);
         if (!new_file && check_kv(kv)) {
