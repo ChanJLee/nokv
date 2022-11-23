@@ -13,9 +13,11 @@ namespace nkv {
         Lock lock_;
         int fd_;
         Map map_;
-    public:
-        KV(int fd) : lock_(fd), fd_(fd), map_() {}
+        int capacity_;
 
+        KV(int fd, int capacity) : lock_(fd), fd_(fd), map_(), capacity_(capacity) {}
+
+    public:
         void flush();
 
         void close();
@@ -28,7 +30,7 @@ namespace nkv {
 
         int write_boolean(char *key, bool v);
 
-        int write_string(char *key, const char* const v);
+        int write_string(char *key, const char *const v);
 
         int read_int32(char *key, int32_t &v);
 
@@ -39,11 +41,19 @@ namespace nkv {
         int read_boolean(char *key, bool &v);
 
         int read_string(char *key, char **v);
+
     private:
-        int write(char *key, byte *value, size_t size);
+        int write(char *key, byte *value, byte type, size_t size);
 
         int read(char *key, byte **value);
+
+    public:
+        KV *create(const char *file);
+
+        void destroy(KV *kv);
     };
+
+    int init(const char *meta_file);
 }
 
 #endif //NKV_CORE_H

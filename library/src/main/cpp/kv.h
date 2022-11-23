@@ -5,7 +5,7 @@
 #ifndef NKV_IO_H
 #define NKV_IO_H
 
-#include "inttypes.h"
+#include <inttypes.h>
 
 namespace nkv {
     typedef unsigned char byte;
