@@ -7,10 +7,10 @@
 #include <cstring>
 #include <unistd.h>
 #include <fstream>
-#include "bctl.h"
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include "log.h"
 
 namespace nkv {
     static const int TYPE_INT32 = 'I';
@@ -45,11 +45,11 @@ namespace nkv {
         return 0;
     }
 
-    int KV::write(const char * const key, byte *value, byte type, size_t size) {
+    int KV::write(const char *const key, byte *value, byte type, size_t size) {
         // todo resize
 
-        byte *begin = mem_begin(&map_);
-        byte *end = mem_end(&map_);
+        byte *begin = mem_begin(map_);
+        byte *end = mem_end(map_);
 
         byte *write_ptr = nullptr;
         read(key, &write_ptr);
@@ -58,8 +58,8 @@ namespace nkv {
         if (write_ptr == nullptr) {
             end[0] = type;
             memcpy(end + 1, value, size);
-            map_.size_ = map_.size_ + size + 1;
-            map_.crc_ = crc(begin, begin + map_.size_);
+            map_->size_ = map_->size_ + size + 1;
+            map_->crc_ = crc(begin, begin + map_->size_);
             return 0;
         }
 
@@ -72,7 +72,7 @@ namespace nkv {
         if (prev_size == size + 1) {
             write_ptr[0] = type;
             memcpy(write_ptr + 1, value, size);
-            map_.crc_ = crc(begin, end);
+            map_->crc_ = crc(begin, end);
             return 0;
         }
 
@@ -81,14 +81,14 @@ namespace nkv {
         memcpy(write_ptr, write_ptr + prev_size, offset_size);
         write_ptr[offset_size] = type;
         memcpy(write_ptr + offset_size + 1, value, size);
-        map_.size_ = map_.size_ - prev_size + size + 1;
-        map_.crc_ = crc(begin, begin + map_.size_);
+        map_->size_ = map_->size_ - prev_size + size + 1;
+        map_->crc_ = crc(begin, begin + map_->size_);
         return 0;
     }
 
-    int KV::read(const char * const key, byte **value) {
-        byte *begin = mem_begin(&map_);
-        byte *end = mem_end(&map_);
+    int KV::read(const char *const key, byte **value) {
+        byte *begin = mem_begin(map_);
+        byte *end = mem_end(map_);
 
         while (begin < end) {
             char *entry_key = reinterpret_cast<char *>(begin);
@@ -122,58 +122,59 @@ namespace nkv {
         ::close(fd_);
     }
 
-    int KV::write_int32(const char * const key, int32_t v) {
+    int KV::write_int32(const char *const key, int32_t v) {
         ScopedLock lock(lock_);
         return write(key, (byte *) &v, TYPE_INT32, 4);
     }
 
-    int KV::write_float(const char * const key, float v) {
+    int KV::write_float(const char *const key, float v) {
         ScopedLock lock(lock_);
         return write(key, (byte *) &v, TYPE_FLOAT, 4);
     }
 
-    int KV::write_int64(const char * const key, int64_t v) {
+    int KV::write_int64(const char *const key, int64_t v) {
         ScopedLock lock(lock_);
         return write(key, (byte *) &v, TYPE_INT64, 8);
     }
 
-    int KV::write_boolean(const char * const key, bool v) {
+    int KV::write_boolean(const char *const key, bool v) {
         ScopedLock lock(lock_);
         return write(key, (byte *) &v, TYPE_BOOLEAN, 1);
     }
 
-    int KV::write_string(const char * const key, const char *const v) {
+    int KV::write_string(const char *const key, const char *const v) {
         ScopedLock lock(lock_);
         return write(key, (byte *) v, TYPE_STRING, strlen(v) + 1);
     }
 
-    int KV::read_int32(const char * const key, int32_t &v) {
+    int KV::read_int32(const char *const key, int32_t &v) {
         ScopedLock lock(lock_);
         return 0;
     }
 
-    int KV::read_float(const char * const key, float &v) {
+    int KV::read_float(const char *const key, float &v) {
         ScopedLock lock(lock_);
         return 0;
     }
 
-    int KV::read_int64(const char * const key, int64_t &v) {
+    int KV::read_int64(const char *const key, int64_t &v) {
         ScopedLock lock(lock_);
         return 0;
     }
 
-    int KV::read_boolean(const char * const key, bool &v) {
+    int KV::read_boolean(const char *const key, bool &v) {
         ScopedLock lock(lock_);
         return 0;
     }
 
-    int KV::read_string(const char * const key, char **v) {
+    int KV::read_string(const char *const key, char **v) {
         ScopedLock lock(lock_);
         return 0;
     }
 
     KV *KV::create(const char *file) {
         if (gLock == nullptr) {
+            LOGD("init module first!");
             return nullptr;
         }
 
@@ -183,6 +184,7 @@ namespace nkv {
         bool new_file = stat(file, &st) != 0;
         int fd = open(file, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR);
         if (fd < 0) {
+            LOGI("open %s failed", file);
             return NULL;
         }
 
@@ -195,10 +197,16 @@ namespace nkv {
 
         void *mem = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
         if (mem == nullptr) {
+            LOGI("mmap %s failed", file);
             return nullptr;
         }
 
-        return new(mem) KV(fd, st.st_size);
+#ifdef NKV_UNIT_TEST
+        ptrdiff_t ptr = reinterpret_cast<ptrdiff_t>(mem);
+        LOGD("mem align %d", ptr % sizeof(Map));
+#endif
+
+        return new KV(fd, st.st_size, mem);
     }
 
     void KV::destroy(KV *kv) {
@@ -207,8 +215,9 @@ namespace nkv {
         }
 
         kv->flush();
-        munmap(kv, kv->capacity_);
+        munmap(kv->map_, kv->capacity_);
         kv->close();
+        delete kv;
     }
 
     int init(const char *meta_file) {

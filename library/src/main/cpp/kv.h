@@ -12,10 +12,11 @@ namespace nkv {
 
     struct Map {
         char magic_[4] = {'n', 'k', 'v', '~'};
-        int version_ = 0x12340100;
-        uint16_t crc_;
+        uint16_t order = 0x1234;
+        uint16_t version_ = 0x0101;
+        uint32_t crc_;
         size_t size_;
-    };
+    } __attribute__ ((aligned (8)));
 }
 
 #endif //NKV_IO_H
