@@ -1,5 +1,6 @@
 package me.chan.nkv;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 
@@ -14,6 +15,7 @@ public class NoKV implements SharedPreferences {
 		System.loadLibrary("nokv");
 	}
 
+	@SuppressLint("StaticFieldLeak")
 	private static Context sContext;
 	private static File sWorkspace;
 
