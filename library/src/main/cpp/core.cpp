@@ -197,13 +197,20 @@ namespace nkv {
         return 0;
     }
 
-    int check_kv(KV *kv) {
+    int KV::check_kv(KV *kv) {
         // todo check
         if (kv == nullptr) {
             return -1;
         }
 
-        return 0;
+        if (kv->map_->size_ == 0) {
+            return 0;
+        }
+
+        byte* begin = mem_begin(kv->map_);
+        int crc = crc32(0, begin, kv->map_->size_);
+        LOGD("prev crc: 0x%x, current crc: 0x%x", kv->map_->crc_, crc);
+        return crc != kv->map_->crc_;
     }
 
     KV *KV::create(const char *file) {
@@ -255,7 +262,8 @@ namespace nkv {
         // todo check map
 
         KV *kv = new KV(fd, st.st_size, mem);
-        if (check_kv(kv)) {
+        if (!new_file && check_kv(kv)) {
+            LOGD("check crc failed");
             kv->close();
             delete kv;
             remove(file);

@@ -64,6 +64,7 @@ namespace nkv {
 
         int write(const char *const key, byte *value, byte type, size_t size);
 
+        static int check_kv(KV* kv);
     public:
         static KV *create(const char *file);
 
