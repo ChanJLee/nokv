@@ -11,6 +11,8 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include "log.h"
+#include <zlib.h>
+#include <stddef.h>
 
 namespace nkv {
 
@@ -36,10 +38,6 @@ namespace nkv {
         return 0;
     }
 
-    int16_t crc(byte *begin, byte *end) {
-        return 0;
-    }
-
     int KV::write(const char *const key, byte *value, byte type, size_t size) {
         // todo resize
 
@@ -57,7 +55,7 @@ namespace nkv {
             end[0] = type;
             memcpy(end + 1, value, size);
             map_->size_ = map_->size_ + size + 1 /* type */ + key_len;
-            map_->crc_ = crc(begin, begin + map_->size_);
+            map_->crc_ = crc32(0, begin, map_->size_);
             return 0;
         }
 
@@ -71,7 +69,7 @@ namespace nkv {
         if (prev_size == size + 1) {
             write_ptr[0] = type;
             memcpy(write_ptr + 1, value, size);
-            map_->crc_ = crc(begin, end);
+            map_->crc_ = crc32(0, begin, map_->size_);
             return 0;
         }
 
@@ -84,7 +82,7 @@ namespace nkv {
         write_ptr[key_len] = type;
         memcpy(write_ptr + key_len + 1, value, size);
         map_->size_ = map_->size_ - prev_size + size + 1;
-        map_->crc_ = crc(begin, begin + map_->size_);
+        map_->crc_ = crc32(0, begin, map_->size_);
         return 0;
     }
 

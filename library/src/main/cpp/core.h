@@ -71,10 +71,6 @@ namespace nkv {
     };
 
     int init(const char *meta_file);
-
-#ifdef NVK_UNIT_TEST
-    int16_t crc(byte *begin, byte *end);
-#endif
 }
 
 #endif //NKV_CORE_H

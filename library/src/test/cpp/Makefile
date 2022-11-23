@@ -4,7 +4,7 @@ CFLAGS = -DNKV_UNIT_TEST -std=c++11 -O3
 all: clean build
 
 build: core.o lock.o main.o
-	$(CC) lock.o core.o main.o -o main
+	$(CC) lock.o core.o main.o -lz -o main
 
 core.o:
 	$(CC) $(CFLAGS) -c ../../main/cpp/core.cpp
