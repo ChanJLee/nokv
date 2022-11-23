@@ -15,9 +15,41 @@ int main(int argc, char *argv[]) {
     kv->write_int32("int32", 0x12345678);
     kv->write_int64("int64", 0x1234567878563412);
     std::cout << "read all" << std::endl;
-    kv->read_all([=](const char *const key, const nkv::byte * value, nkv::byte type, size_t size) {
-        std::string s((char* ) value, size);
-        std::cout << "key: " << key << "| type:" << type << "| value: " << s << std::endl;
+    kv->read_all([=](const char *const key, const nkv::byte *value, nkv::byte type, size_t size) {
+        printf("key: %s, value: ", key);
+        switch (type) {
+            case nkv::TYPE_INT64: {
+                int64_t v = 0;
+                kv->read_int64(key, v);
+                printf("0x%x", v);
+                break;
+            }
+            case nkv::TYPE_INT32: {
+                int32_t v = 0;
+                kv->read_int32(key, v);
+                printf("0x%x", v);
+                break;
+            }
+            case nkv::TYPE_FLOAT: {
+                float v = 0;
+                kv->read_float(key, v);
+                printf("%f", v);
+                break;
+            }
+            case nkv::TYPE_BOOLEAN: {
+                bool v = 0;
+                kv->read_boolean(key, v);
+                printf("%d", v);
+                break;
+            }
+            case nkv::TYPE_STRING: {
+                char* v = 0;
+                kv->read_string(key, &v);
+                printf("%s", v);
+                break;
+            }
+        }
+        printf("\n");
     });
     std::cout << "destroy" << std::endl;
     nkv::KV::destroy(kv);

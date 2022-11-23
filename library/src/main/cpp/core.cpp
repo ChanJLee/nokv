@@ -13,11 +13,6 @@
 #include "log.h"
 
 namespace nkv {
-    static const int TYPE_INT32 = 'I';
-    static const int TYPE_FLOAT = 'F';
-    static const int TYPE_INT64 = 'L';
-    static const int TYPE_BOOLEAN = 'B';
-    static const int TYPE_STRING = 'S';
 
     static inline byte *mem_begin(Map *map) { return (byte *) map + sizeof(Map); }
 
@@ -35,7 +30,7 @@ namespace nkv {
             case TYPE_INT64:
                 return 9;
             case TYPE_STRING:
-                return strlen((char *) mem + 1) + 1;
+                return strlen((char *) mem + 1) + 2;
         }
 
         return 0;
@@ -196,9 +191,11 @@ namespace nkv {
 
     int KV::read_string(const char *const key, char **v) {
         ScopedLock lock(lock_);
-        if (read(key, reinterpret_cast<byte **>(v))) {
+        byte *ptr = nullptr;
+        if (read(key, &ptr)) {
             return -1;
         }
+        *v = (char *) ptr + 1;
         return 0;
     }
 

@@ -10,7 +10,7 @@
 namespace nkv {
     class Lock {
         int fd_;
-        std::mutex thread_lock_;
+        std::recursive_mutex thread_lock_;
     public: Lock(int fd): fd_(fd), thread_lock_() {}
 
         void lock();

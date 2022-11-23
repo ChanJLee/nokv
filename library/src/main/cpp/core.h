@@ -10,6 +10,12 @@
 #include <functional>
 
 namespace nkv {
+    const int TYPE_INT32 = 'I';
+    const int TYPE_FLOAT = 'F';
+    const int TYPE_INT64 = 'L';
+    const int TYPE_BOOLEAN = 'B';
+    const int TYPE_STRING = 'S';
+
     class KV {
         Lock lock_;
         int fd_;
