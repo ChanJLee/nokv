@@ -45,7 +45,7 @@ namespace nkv {
         return 0;
     }
 
-    int KV::write(char *key, byte *value, byte type, size_t size) {
+    int KV::write(const char * const key, byte *value, byte type, size_t size) {
         // todo resize
 
         byte *begin = mem_begin(&map_);
@@ -86,7 +86,7 @@ namespace nkv {
         return 0;
     }
 
-    int KV::read(char *key, byte **value) {
+    int KV::read(const char * const key, byte **value) {
         byte *begin = mem_begin(&map_);
         byte *end = mem_end(&map_);
 
@@ -122,52 +122,52 @@ namespace nkv {
         ::close(fd_);
     }
 
-    int KV::write_int32(char *key, int32_t v) {
+    int KV::write_int32(const char * const key, int32_t v) {
         ScopedLock lock(lock_);
         return write(key, (byte *) &v, TYPE_INT32, 4);
     }
 
-    int KV::write_float(char *key, float v) {
+    int KV::write_float(const char * const key, float v) {
         ScopedLock lock(lock_);
         return write(key, (byte *) &v, TYPE_FLOAT, 4);
     }
 
-    int KV::write_int64(char *key, int64_t v) {
+    int KV::write_int64(const char * const key, int64_t v) {
         ScopedLock lock(lock_);
         return write(key, (byte *) &v, TYPE_INT64, 8);
     }
 
-    int KV::write_boolean(char *key, bool v) {
+    int KV::write_boolean(const char * const key, bool v) {
         ScopedLock lock(lock_);
         return write(key, (byte *) &v, TYPE_BOOLEAN, 1);
     }
 
-    int KV::write_string(char *key, const char *const v) {
+    int KV::write_string(const char * const key, const char *const v) {
         ScopedLock lock(lock_);
         return write(key, (byte *) v, TYPE_STRING, strlen(v) + 1);
     }
 
-    int KV::read_int32(char *key, int32_t &v) {
+    int KV::read_int32(const char * const key, int32_t &v) {
         ScopedLock lock(lock_);
         return 0;
     }
 
-    int KV::read_float(char *key, float &v) {
+    int KV::read_float(const char * const key, float &v) {
         ScopedLock lock(lock_);
         return 0;
     }
 
-    int KV::read_int64(char *key, int64_t &v) {
+    int KV::read_int64(const char * const key, int64_t &v) {
         ScopedLock lock(lock_);
         return 0;
     }
 
-    int KV::read_boolean(char *key, bool &v) {
+    int KV::read_boolean(const char * const key, bool &v) {
         ScopedLock lock(lock_);
         return 0;
     }
 
-    int KV::read_string(char *key, char **v) {
+    int KV::read_string(const char * const key, char **v) {
         ScopedLock lock(lock_);
         return 0;
     }

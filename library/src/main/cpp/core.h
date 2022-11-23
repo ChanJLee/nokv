@@ -22,35 +22,35 @@ namespace nkv {
 
         void close();
 
-        int write_int32(char *key, int32_t v);
+        int write_int32(const char * const key, int32_t v);
 
-        int write_float(char *key, float v);
+        int write_float(const char * const key, float v);
 
-        int write_int64(char *key, int64_t v);
+        int write_int64(const char * const key, int64_t v);
 
-        int write_boolean(char *key, bool v);
+        int write_boolean(const char * const key, bool v);
 
-        int write_string(char *key, const char *const v);
+        int write_string(const char * const key, const char *const v);
 
-        int read_int32(char *key, int32_t &v);
+        int read_int32(const char * const key, int32_t &v);
 
-        int read_float(char *key, float &v);
+        int read_float(const char * const key, float &v);
 
-        int read_int64(char *key, int64_t &v);
+        int read_int64(const char * const key, int64_t &v);
 
-        int read_boolean(char *key, bool &v);
+        int read_boolean(const char * const key, bool &v);
 
-        int read_string(char *key, char **v);
+        int read_string(const char * const key, char **v);
 
     private:
-        int write(char *key, byte *value, byte type, size_t size);
+        int write(const char * const key, byte *value, byte type, size_t size);
 
-        int read(char *key, byte **value);
+        int read(const char * const key, byte **value);
 
     public:
-        KV *create(const char *file);
+        static KV *create(const char *file);
 
-        void destroy(KV *kv);
+        static void destroy(KV *kv);
     };
 
     int init(const char *meta_file);
