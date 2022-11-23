@@ -22,3 +22,24 @@ Java_me_chan_nkv_NoKV_nativeRelease(JNIEnv *env, jclass clazz, jlong ptr) {
     auto kv = (nkv::KV *) ptr;
     nkv::KV::destroy(kv);
 }
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_me_chan_nkv_NoKV_nativeContains(JNIEnv *env, jclass clazz, jlong ptr, jstring key) {
+    auto kv = (nkv::KV *) ptr;
+    DEF_C_STR(env, key, k);
+    return kv->contains(k);
+}
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_me_chan_nkv_NoKV_nativeGetInt(JNIEnv *env, jclass clazz, jlong ptr, jstring key,
+                                   jint def_value) {
+    auto kv = (nkv::KV *) ptr;
+    DEF_C_STR(env, key, k);
+    nkv::byte *mem = nullptr;
+    if (kv->read(k, &mem)) {
+        return def_value;
+    }
+    /// todo
+}

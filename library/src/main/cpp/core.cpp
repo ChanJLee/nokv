@@ -300,6 +300,15 @@ namespace nkv {
         return 0;
     }
 
+    bool KV::contains(const char *const key) {
+        ScopedLock lock(lock_);
+        byte *ptr = nullptr;
+        if (read(key, &ptr)) {
+            return -1;
+        }
+        return ptr != nullptr;
+    }
+
     int init(const char *meta_file) {
         int fd = open(meta_file, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR);
         if (fd < 0) {

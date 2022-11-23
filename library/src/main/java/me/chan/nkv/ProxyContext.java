@@ -12,7 +12,7 @@ class ProxyContext extends ContextWrapper {
 
 	@Override
 	public SharedPreferences getSharedPreferences(String name, int mode) {
-		NoKV kv = NoKV.create(name, mode);
+		SharedPreferences kv = NoKV.create(name, mode);
 		if (kv != null) {
 			return kv;
 		}

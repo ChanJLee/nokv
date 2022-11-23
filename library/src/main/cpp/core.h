@@ -57,10 +57,12 @@ namespace nkv {
         int read_all(
                 const std::function<void(const char *const, const byte *, byte, size_t size)> &fnc);
 
-    private:
-        int write(const char *const key, byte *value, byte type, size_t size);
+        bool contains(const char *const key);
 
         int read(const char *const key, byte **value);
+    private:
+
+        int write(const char *const key, byte *value, byte type, size_t size);
 
     public:
         static KV *create(const char *file);

@@ -59,7 +59,7 @@ public class NoKV implements SharedPreferences {
 
 	@Override
 	public int getInt(String key, int defValue) {
-		return 0;
+		return nativeGetInt(mPtr, key, defValue);
 	}
 
 	@Override
@@ -79,7 +79,7 @@ public class NoKV implements SharedPreferences {
 
 	@Override
 	public boolean contains(String key) {
-		return false;
+		return nativeContains(mPtr, key);
 	}
 
 	@Override
@@ -108,4 +108,8 @@ public class NoKV implements SharedPreferences {
 	private static native int nativeInit(String metaFile);
 
 	private static native void nativeRelease(long ptr);
+
+	private static native int nativeGetInt(long ptr, String key, int defValue);
+
+	private static native boolean nativeContains(long ptr, String key);
 }
