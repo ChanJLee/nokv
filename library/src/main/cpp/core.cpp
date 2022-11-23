@@ -156,26 +156,58 @@ namespace nkv {
 
     int KV::read_int32(const char *const key, int32_t &v) {
         ScopedLock lock(lock_);
+        byte *ptr = nullptr;
+        if (read(key, &ptr)) {
+            return -1;
+        }
+        memcpy(&v, ptr + 1, 4);
         return 0;
     }
 
     int KV::read_float(const char *const key, float &v) {
         ScopedLock lock(lock_);
+        byte *ptr = nullptr;
+        if (read(key, &ptr)) {
+            return -1;
+        }
+        memcpy(&v, ptr + 1, 4);
         return 0;
     }
 
     int KV::read_int64(const char *const key, int64_t &v) {
         ScopedLock lock(lock_);
+        byte *ptr = nullptr;
+        if (read(key, &ptr)) {
+            return -1;
+        }
+        memcpy(&v, ptr + 1, 8);
         return 0;
     }
 
     int KV::read_boolean(const char *const key, bool &v) {
         ScopedLock lock(lock_);
+        byte *ptr = nullptr;
+        if (read(key, &ptr)) {
+            return -1;
+        }
+        memcpy(&v, ptr + 1, 1);
         return 0;
     }
 
     int KV::read_string(const char *const key, char **v) {
         ScopedLock lock(lock_);
+        if (read(key, reinterpret_cast<byte **>(v))) {
+            return -1;
+        }
+        return 0;
+    }
+
+    int check_kv(KV *kv) {
+        // todo check
+        if (kv == nullptr) {
+            return -1;
+        }
+
         return 0;
     }
 
@@ -217,7 +249,14 @@ namespace nkv {
 #endif
         // todo check map
 
-        return new KV(fd, st.st_size, mem);
+        KV *kv = new KV(fd, st.st_size, mem);
+        if (check_kv(kv)) {
+            kv->close();
+            delete kv;
+            remove(file);
+            return nullptr;
+        }
+        return kv;
     }
 
     void KV::destroy(KV *kv) {
@@ -229,6 +268,29 @@ namespace nkv {
         munmap(kv->map_, kv->capacity_);
         kv->close();
         delete kv;
+    }
+
+    int
+    KV::read_all(const std::function<void(const char *const, const byte *, byte, size_t)> &fnc) {
+        ScopedLock lock(lock_);
+        byte *begin = mem_begin(map_);
+        byte *end = mem_end(map_);
+
+        while (begin < end) {
+            char *entry_key = reinterpret_cast<char *>(begin);
+            size_t key_len = strlen(entry_key);
+            byte *data = begin + key_len + 1;
+            size_t data_len = get_entry_size(data);
+            if (data_len == 0) {
+                /* invalid state */
+                return -2;
+            }
+
+            fnc((const char *const) begin, data + 1, data[0], data_len - 1);
+
+            begin = data + data_len;
+        }
+        return 0;
     }
 
     int init(const char *meta_file) {

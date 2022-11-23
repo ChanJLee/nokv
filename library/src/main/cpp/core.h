@@ -7,6 +7,7 @@
 
 #include "lock.h"
 #include "kv.h"
+#include <functional>
 
 namespace nkv {
     class KV {
@@ -50,6 +51,11 @@ namespace nkv {
         int read_boolean(const char *const key, bool &v);
 
         int read_string(const char *const key, char **v);
+
+        size_t size() const { return map_->size_; }
+
+        int read_all(
+                const std::function<void(const char *const, const byte *, byte, size_t size)> &fnc);
 
     private:
         int write(const char *const key, byte *value, byte type, size_t size);
