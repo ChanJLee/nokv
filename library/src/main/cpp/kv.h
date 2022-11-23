@@ -11,9 +11,9 @@ namespace nkv {
     typedef unsigned char byte;
 
     struct Map {
-        char magic_[4] = {'n', 'k', 'v', '~'};
-        uint16_t order = 0x1234;
-        uint16_t version_ = 0x0101;
+        char magic_[4];
+        uint16_t order;
+        uint16_t version_;
         uint32_t crc_;
         size_t size_;
     } __attribute__ ((aligned (8)));

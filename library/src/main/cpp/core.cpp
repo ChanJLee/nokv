@@ -19,7 +19,7 @@ namespace nkv {
     static const int TYPE_BOOLEAN = 'B';
     static const int TYPE_STRING = 'S';
 
-    static inline byte *mem_begin(Map *map) { return reinterpret_cast<byte *>(map + sizeof(Map)); }
+    static inline byte *mem_begin(Map *map) { return (byte *) map + sizeof(Map); }
 
     static inline byte *mem_end(Map *map) { return mem_begin(map) + map->size_; }
 
@@ -195,7 +195,7 @@ namespace nkv {
             ::write(fd, buf, _SC_PAGE_SIZE);
         }
 
-        void *mem = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+        void *mem = mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
         if (mem == nullptr) {
             LOGI("mmap %s failed", file);
             return nullptr;
@@ -205,6 +205,7 @@ namespace nkv {
         ptrdiff_t ptr = reinterpret_cast<ptrdiff_t>(mem);
         LOGD("mem align %d", ptr % sizeof(Map));
 #endif
+        // todo check map
 
         return new KV(fd, st.st_size, mem);
     }
