@@ -54,15 +54,19 @@ namespace nkv {
         byte *write_ptr = nullptr;
         read(key, &write_ptr);
 
-        // 重新插入
+        // 新值
         if (write_ptr == nullptr) {
+            size_t key_len = strlen(key) + 1;
+            memcpy(end, key, key_len);
+            end += key_len;
             end[0] = type;
             memcpy(end + 1, value, size);
-            map_->size_ = map_->size_ + size + 1;
+            map_->size_ = map_->size_ + size + 1 /* type */ + key_len;
             map_->crc_ = crc(begin, begin + map_->size_);
             return 0;
         }
 
+        // 旧值
         size_t prev_size = get_entry_size(write_ptr);
         if (prev_size == 0) {
             /* invalid state */
@@ -77,10 +81,13 @@ namespace nkv {
         }
 
         // 长度发生了变化就要重排
+        size_t key_len = strlen(key) + 1;
         size_t offset_size = end - write_ptr - prev_size;
-        memcpy(write_ptr, write_ptr + prev_size, offset_size);
-        write_ptr[offset_size] = type;
-        memcpy(write_ptr + offset_size + 1, value, size);
+        memcpy(write_ptr - key_len, write_ptr + prev_size, offset_size);
+        write_ptr = write_ptr - key_len + offset_size;
+        memcpy(write_ptr, key, key_len);
+        write_ptr[key_len] = type;
+        memcpy(write_ptr + key_len + 1, value, size);
         map_->size_ = map_->size_ - prev_size + size + 1;
         map_->crc_ = crc(begin, begin + map_->size_);
         return 0;
