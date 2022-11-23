@@ -1,13 +1,45 @@
 package me.chan.nkv;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 
 import androidx.annotation.Nullable;
 
+import java.io.File;
 import java.util.Map;
 import java.util.Set;
 
 public class NoKV implements SharedPreferences {
+	static {
+		System.loadLibrary("nokv");
+	}
+
+	private static Context sContext;
+	private static File sWorkspace;
+
+	public static Context init(Context baseContext) {
+		sContext = baseContext;
+		sWorkspace = baseContext.getDir("nokv", Context.MODE_PRIVATE);
+		if (nativeInit(new File(sWorkspace, "nkv_meta").toString()) != 0) {
+			return baseContext;
+		}
+		return new ProxyContext(baseContext);
+	}
+
+	public static SharedPreferences create(String name, int mode) {
+		long ptr = nativeCreate(new File(sWorkspace, "/kv/" + name).getAbsolutePath());
+		if (ptr == 0) {
+			return sContext.getSharedPreferences(name, mode);
+		}
+		return new NoKV(ptr);
+	}
+
+	private final long mPtr;
+
+	private NoKV(long ptr) {
+		mPtr = ptr;
+	}
+
 	@Override
 	public Map<String, ?> getAll() {
 		return null;
@@ -57,11 +89,23 @@ public class NoKV implements SharedPreferences {
 
 	@Override
 	public void registerOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener listener) {
-
+		// todo
 	}
 
 	@Override
 	public void unregisterOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener listener) {
-
+		// todo
 	}
+
+	@Override
+	protected void finalize() throws Throwable {
+		super.finalize();
+		nativeRelease(mPtr);
+	}
+
+	private static native long nativeCreate(String kv);
+
+	private static native int nativeInit(String metaFile);
+
+	private static native void nativeRelease(long ptr);
 }

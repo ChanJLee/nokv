@@ -1,17 +1,24 @@
-// Write C++ code here.
-//
-// Do not forget to dynamically load the C++ library into your application.
-//
-// For instance,
-//
-// In MainActivity.java:
-//    static {
-//       System.loadLibrary("library");
-//    }
-//
-// Or, in MainActivity.kt:
-//    companion object {
-//      init {
-//         System.loadLibrary("library")
-//      }
-//    }
+#include <jni.h>
+#include "core.h"
+#include "scoped_str.h"
+
+extern "C"
+JNIEXPORT jlong JNICALL
+Java_me_chan_nkv_NoKV_nativeCreate(JNIEnv *env, jclass clazz, jstring kv) {
+    DEF_C_STR(env, kv, kv_path);
+    return (jlong) nkv::KV::create(kv_path);
+}
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_me_chan_nkv_NoKV_nativeInit(JNIEnv *env, jclass clazz, jstring metaFile) {
+    DEF_C_STR(env, metaFile, meta);
+    return nkv::init(meta);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_me_chan_nkv_NoKV_nativeRelease(JNIEnv *env, jclass clazz, jlong ptr) {
+    auto kv = (nkv::KV *) ptr;
+    nkv::KV::destroy(kv);
+}
