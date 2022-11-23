@@ -15,8 +15,8 @@ namespace nkv {
         uint16_t order;
         uint16_t version_;
         uint32_t crc_;
-        size_t size_;
-    } __attribute__ ((aligned (8)));
+        uint32_t size_;
+    } __attribute__ ((aligned (4)));
 }
 
 #endif //NKV_IO_H

@@ -190,9 +190,12 @@ namespace nkv {
 
         // avoid BUS error
         if (new_file) {
-            st.st_size = _SC_PAGE_SIZE;
-            byte buf[_SC_PAGE_SIZE] = {0};
-            ::write(fd, buf, _SC_PAGE_SIZE);
+            size_t size = sysconf(_SC_PAGESIZE);
+            st.st_size = size;
+            byte *buf = (byte *) malloc(size);
+            ::write(fd, buf, size);
+            free(buf);
+            fsync(fd);
         }
 
         void *mem = mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
@@ -203,7 +206,7 @@ namespace nkv {
 
 #ifdef NKV_UNIT_TEST
         ptrdiff_t ptr = reinterpret_cast<ptrdiff_t>(mem);
-        LOGD("mem align %d", ptr % sizeof(Map));
+        LOGD("mem align %d, %d, %d", ptr % sizeof(Map), ptr, sizeof(Map));
 #endif
         // todo check map
 
