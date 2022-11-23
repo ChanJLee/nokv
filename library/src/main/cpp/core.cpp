@@ -236,6 +236,7 @@ namespace nkv {
             // order
             uint16_t magic = 0x1234;
             memcpy(buf + 4, &magic, sizeof(magic));
+            // version
             magic = 0x0100;
             memcpy(buf + 4 + sizeof(magic), &magic, sizeof(magic));
             ::write(fd, buf, size);
