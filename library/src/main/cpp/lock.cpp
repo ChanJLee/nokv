@@ -2,7 +2,7 @@
 // Created by chan on 2022/11/20.
 //
 #include "lock.h"
-#include <fcntl.h>
+#include <sys/file.h>
 #include "log.h"
 
 namespace nokv {

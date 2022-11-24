@@ -175,7 +175,7 @@ namespace nokv {
             return -1;
         }
 
-        template<>
+        template<class T = kv_string_t>
         int read(const char *const key, kv_string_t &ret) {
             byte *ptr = nullptr;
             if (read(key, &ptr)) {

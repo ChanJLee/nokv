@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -DNKV_UNIT_TEST -std=c++11 -O3
+CFLAGS = -DNKV_UNIT_TEST -std=c++11 -Wunused-result
 
 all: clean build
 
