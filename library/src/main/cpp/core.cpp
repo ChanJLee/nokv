@@ -113,7 +113,6 @@ namespace nokv {
     }
 
     void KV::flush() {
-        ScopedLock<nokv::Lock> lock(lock_);
         ::msync(map_, capacity_, MS_SYNC);
     }
 
@@ -199,7 +198,6 @@ namespace nokv {
             return;
         }
 
-        kv->flush();
         munmap(kv->map_, kv->capacity_);
         kv->close();
         delete kv;
@@ -207,7 +205,6 @@ namespace nokv {
 
     int
     KV::read_all(const std::function<void(const char *const, const byte *, byte, size_t)> &fnc) {
-        ScopedLock<nokv::Lock> lock(lock_);
         byte *begin = mem_begin(map_);
         byte *end = mem_end(map_);
 
@@ -229,7 +226,6 @@ namespace nokv {
     }
 
     bool KV::contains(const char *const key) {
-        ScopedLock<nokv::Lock> lock(lock_);
         byte *ptr = nullptr;
         if (read(key, &ptr)) {
             return false;
