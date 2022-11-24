@@ -122,31 +122,6 @@ namespace nkv {
         ::close(fd_);
     }
 
-    int KV::write_int32(const char *const key, int32_t v) {
-        ScopedLock lock(lock_);
-        return write(key, (byte *) &v, TYPE_INT32, 4);
-    }
-
-    int KV::write_float(const char *const key, float v) {
-        ScopedLock lock(lock_);
-        return write(key, (byte *) &v, TYPE_FLOAT, 4);
-    }
-
-    int KV::write_int64(const char *const key, int64_t v) {
-        ScopedLock lock(lock_);
-        return write(key, (byte *) &v, TYPE_INT64, 8);
-    }
-
-    int KV::write_boolean(const char *const key, bool v) {
-        ScopedLock lock(lock_);
-        return write(key, (byte *) &v, TYPE_BOOLEAN, 1);
-    }
-
-    int KV::write_string(const char *const key, const char *const v) {
-        ScopedLock lock(lock_);
-        return write(key, (byte *) v, TYPE_STRING, strlen(v) + 1);
-    }
-
     int KV::read_int32(const char *const key, int32_t &v) {
         ScopedLock lock(lock_);
         byte *ptr = nullptr;
