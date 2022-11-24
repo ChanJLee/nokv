@@ -114,7 +114,7 @@ namespace nkv {
 
     void KV::flush() {
         ScopedLock lock(lock_);
-        fsync(fd_);
+        ::msync(map_, capacity_, MS_SYNC);
     }
 
     void KV::close() {
@@ -132,7 +132,7 @@ namespace nkv {
             return 0;
         }
 
-        byte* begin = mem_begin(kv->map_);
+        byte *begin = mem_begin(kv->map_);
         int crc = crc32(0, begin, kv->map_->size_);
         LOGD("prev crc: 0x%x, current crc: 0x%x", kv->map_->crc_, crc);
         return crc != kv->map_->crc_;
@@ -148,7 +148,7 @@ namespace nkv {
 
         struct stat st{};
         bool new_file = stat(file, &st) != 0;
-        int fd = open(file, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR);
+        int fd = open(file, O_RDWR | O_CREAT | O_CLOEXEC, S_IWUSR | S_IRUSR);
         if (fd < 0) {
             LOGI("open %s failed", file);
             return NULL;
@@ -156,7 +156,7 @@ namespace nkv {
 
         // avoid BUS error
         if (new_file) {
-            size_t size = sysconf(_SC_PAGESIZE);
+            size_t size = getpagesize();
             st.st_size = size;
             byte *buf = (byte *) malloc(size);
             buf[0] = 'n';

@@ -172,11 +172,17 @@ namespace nkv {
                     return cast_stream<kv_int64_t, T>(ptr, ret);
             }
 
-            if (ptr[0] == TYPE_STRING) {
-                if (!Entry<kv_string_t>::compat(ptr[0])) {
-                    return -1;
-                }
+            return -1;
+        }
 
+        template<>
+        int read(const char *const key, kv_string_t &ret) {
+            byte *ptr = nullptr;
+            if (read(key, &ptr)) {
+                return -1;
+            }
+
+            if (ptr[0] == TYPE_STRING) {
                 ret = (char *) ptr + 1;
                 return 0;
             }
