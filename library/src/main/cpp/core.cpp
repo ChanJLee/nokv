@@ -232,7 +232,7 @@ namespace nkv {
         ScopedLock<nkv::Lock> lock(lock_);
         byte *ptr = nullptr;
         if (read(key, &ptr)) {
-            return -1;
+            return false;
         }
         return ptr != nullptr;
     }
