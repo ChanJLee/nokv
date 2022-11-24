@@ -5,7 +5,7 @@
 #include <fcntl.h>
 #include "log.h"
 
-namespace nkv {
+namespace nokv {
     void Lock::lock() {
         thread_lock_.lock();
         int code = 0;

@@ -7,7 +7,7 @@
 
 #include <mutex>
 
-namespace nkv {
+namespace nokv {
     class Lock {
         int fd_;
         std::recursive_mutex thread_lock_;

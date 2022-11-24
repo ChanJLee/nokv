@@ -7,7 +7,7 @@
 
 #include <inttypes.h>
 
-namespace nkv {
+namespace nokv {
     typedef unsigned char byte;
 
     struct Map {

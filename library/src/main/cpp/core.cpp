@@ -14,7 +14,7 @@
 #include <zlib.h>
 #include <stddef.h>
 
-namespace nkv {
+namespace nokv {
 
     static inline byte *mem_begin(Map *map) { return (byte *) map + sizeof(Map); }
 
@@ -113,7 +113,7 @@ namespace nkv {
     }
 
     void KV::flush() {
-        ScopedLock<nkv::Lock> lock(lock_);
+        ScopedLock<nokv::Lock> lock(lock_);
         ::msync(map_, capacity_, MS_SYNC);
     }
 
@@ -142,7 +142,7 @@ namespace nkv {
             return nullptr;
         }
 
-        ScopedLock<nkv::Lock> lock(*gLock);
+        ScopedLock<nokv::Lock> lock(*gLock);
 
         struct stat st{};
         bool new_file = stat(file, &st) != 0;
@@ -207,7 +207,7 @@ namespace nkv {
 
     int
     KV::read_all(const std::function<void(const char *const, const byte *, byte, size_t)> &fnc) {
-        ScopedLock<nkv::Lock> lock(lock_);
+        ScopedLock<nokv::Lock> lock(lock_);
         byte *begin = mem_begin(map_);
         byte *end = mem_end(map_);
 
@@ -229,7 +229,7 @@ namespace nkv {
     }
 
     bool KV::contains(const char *const key) {
-        ScopedLock<nkv::Lock> lock(lock_);
+        ScopedLock<nokv::Lock> lock(lock_);
         byte *ptr = nullptr;
         if (read(key, &ptr)) {
             return false;

@@ -10,7 +10,7 @@
 #include <cstring>
 #include <functional>
 
-namespace nkv {
+namespace nokv {
     typedef byte kv_type_t;
     const int TYPE_INT32 = 'I';
     const int TYPE_FLOAT = 'F';
