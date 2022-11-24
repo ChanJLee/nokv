@@ -37,16 +37,9 @@ Java_me_chan_nkv_NoKV_nativeGetInt(JNIEnv *env, jclass clazz, jlong ptr, jstring
                                    jint def_value) {
     auto kv = (nkv::KV *) ptr;
     DEF_C_STR(env, key, k);
-    nkv::byte *mem = nullptr;
-    if (kv->read(k, &mem)) {
+    nkv::kv_int32_t v = 0;
+    if (kv->read(k, v)) {
         return def_value;
     }
-
-    if (mem[0] == nkv::TYPE_STRING) {
-        return def_value;
-    }
-
-
-
     return def_value;
 }

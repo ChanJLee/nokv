@@ -3,7 +3,17 @@
 #include <string>
 #include <inttypes.h>
 
+template<class T, class O>
+O test_cast() {
+    T v1 = 0;
+    O v2;
+    return v2 = v1;
+}
+
 int main(int argc, char *argv[]) {
+
+
+
     std::cout << "init" << std::endl;
     nkv::init(argv[1]);
     std::cout << "create kv" << std::endl;
@@ -21,7 +31,7 @@ int main(int argc, char *argv[]) {
             case nkv::TYPE_INT64: {
                 nkv::kv_int64_t v = 0;
                 kv->read(key, v);
-                printf("0x%x", v);
+                printf("0x%llx", v);
                 break;
             }
             case nkv::TYPE_INT32: {

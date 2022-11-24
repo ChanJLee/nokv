@@ -11,6 +11,7 @@
 #include <functional>
 
 namespace nkv {
+    typedef byte kv_type_t;
     const int TYPE_INT32 = 'I';
     const int TYPE_FLOAT = 'F';
     const int TYPE_INT64 = 'L';
@@ -24,63 +25,98 @@ namespace nkv {
     typedef int64_t kv_int64_t;
 
     template<typename T>
-    struct Entry {
+    class Entry {
 
     };
 
     template<>
-    struct Entry<kv_int32_t> {
+    class Entry<kv_int32_t> {
+    public:
         using type_t = kv_int32_t;
+    private:
+        type_t v_;
+    public:
+        Entry(type_t v) : v_(v) {}
 
-        const static byte kv_type = TYPE_INT32;
+        const static kv_type_t kv_type = TYPE_INT32;
 
-        static size_t size(type_t v) { return 4; }
+        static size_t size() { return 4; }
 
-        static byte *value(type_t &v) { return reinterpret_cast<byte *>(&v); }
+        byte *value() { return reinterpret_cast<byte *>(&v_); }
+
+        static bool compat(kv_type_t type) { return type != TYPE_STRING && type != TYPE_FLOAT; }
     };
 
     template<>
-    struct Entry<kv_float_t> {
+    class Entry<kv_float_t> {
+    public:
         using type_t = kv_float_t;
+    private:
+        type_t v_;
+    public:
+        Entry(type_t v) : v_(v) {}
 
-        const static byte kv_type = TYPE_FLOAT;
+        const static kv_type_t kv_type = TYPE_FLOAT;
 
-        static size_t size(type_t v) { return 4; }
+        static size_t size() { return 4; }
 
-        static byte *value(type_t &v) { return reinterpret_cast<byte *>(&v); }
+        byte *value() { return reinterpret_cast<byte *>(&v_); }
+
+        static bool compat(kv_type_t type) { return type != TYPE_STRING && type != TYPE_INT64; }
     };
 
     template<>
-    struct Entry<kv_int64_t> {
+    class Entry<kv_int64_t> {
+    public:
         using type_t = kv_int64_t;
+    private:
+        type_t v_;
+    public:
+        Entry(type_t v) : v_(v) {}
 
-        const static byte kv_type = TYPE_INT64;
+        const static kv_type_t kv_type = TYPE_INT64;
 
-        static size_t size(type_t v) { return 8; }
+        static size_t size() { return 8; }
 
-        static byte *value(type_t &v) { return reinterpret_cast<byte *>(&v); }
+        byte *value() { return reinterpret_cast<byte *>(&v_); }
+
+        static bool compat(kv_type_t type) { return type != TYPE_STRING && type != TYPE_FLOAT; }
     };
 
     template<>
-    struct Entry<kv_string_t> {
+    class Entry<kv_string_t> {
+    public:
         using type_t = kv_string_t;
+    private:
+        type_t v_;
+    public:
+        Entry(type_t v) : v_(v) {}
 
-        const static byte kv_type = TYPE_STRING;
+        const static kv_type_t kv_type = TYPE_STRING;
 
-        static size_t size(kv_string_t v) { return strlen(v) + 1; }
+        size_t size() { return strlen(v_) + 1; }
 
-        static byte *value(type_t v) { return (byte *) (v); }
+        byte *value() { return (byte *) (v_); }
+
+        static bool compat(kv_type_t type) { return true; }
     };
 
     template<>
-    struct Entry<kv_boolean_t> {
+    class Entry<kv_boolean_t> {
+    public:
         using type_t = kv_boolean_t;
+    private:
+        type_t v_;
+    public:
+        Entry(type_t v) : v_(v) {}
 
-        const static byte kv_type = TYPE_BOOLEAN;
+        const static kv_type_t kv_type = TYPE_BOOLEAN;
 
-        static size_t size(type_t v) { return 1; }
+        static size_t size() { return 1; }
 
-        static byte *value(type_t &v) { return reinterpret_cast<byte *>(&v); }
+        byte *value() { return reinterpret_cast<byte *>(&v_); }
+
+        static bool compat(kv_type_t type) { return type == TYPE_BOOLEAN; }
     };
 
     class KV {
@@ -100,6 +136,19 @@ namespace nkv {
 
         static int check_kv(KV *kv);
 
+        template<class T, class O>
+        int cast_stream(byte *ptr, O &ret) {
+            /* type compat */
+            if (!Entry<T>::compat(ptr[0])) {
+                return -1;
+            }
+
+            T tmp;
+            memcpy(&tmp, ptr + 1, Entry<T>::size());
+            ret = (T) tmp;
+            return 0;
+        }
+
     public:
         template<class T>
         int read(const char *const key, T &ret) {
@@ -109,8 +158,19 @@ namespace nkv {
             if (read(key, &ptr)) {
                 return -1;
             }
-            memcpy(&ret, ptr + 1, Entry<T>::size(ret));
-            return 0;
+
+            switch (ptr[0]) {
+                case TYPE_INT32:
+                    return cast_stream<kv_int32_t, T>(ptr, ret);
+                case TYPE_FLOAT:
+                    return cast_stream<kv_float_t, T>(ptr, ret);
+                case TYPE_BOOLEAN:
+                    return cast_stream<kv_boolean_t, T>(ptr, ret);
+                case TYPE_INT64:
+                    return cast_stream<kv_int64_t, T>(ptr, ret);
+            }
+
+            return -1;
         }
 
         template<>
@@ -127,10 +187,11 @@ namespace nkv {
         int write(const char *const key, T v) {
             static_assert(Entry<T>::kv_type,
                           "only support kv_boolean_t/kv_string_t/kv_int32_t/kv_int64_t/kv_float_t");
+            Entry<T> entry(v);
             return write(key,
-                         Entry<T>::value(v),
+                         entry.value(),
                          Entry<T>::kv_type,
-                         Entry<T>::size(v)
+                         entry.size()
             );
         }
 

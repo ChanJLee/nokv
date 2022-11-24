@@ -182,7 +182,7 @@ namespace nkv {
 
 #ifdef NKV_UNIT_TEST
         ptrdiff_t ptr = reinterpret_cast<ptrdiff_t>(mem);
-        LOGD("mem align %d, %d, %d", ptr % sizeof(Map), ptr, sizeof(Map));
+        LOGD("mem align %lu, %td, %lu", ptr % sizeof(Map), ptr, sizeof(Map));
 #endif
 
         KV *kv = new KV(fd, st.st_size, mem);
