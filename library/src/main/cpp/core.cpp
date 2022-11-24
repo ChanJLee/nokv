@@ -118,7 +118,6 @@ namespace nkv {
     }
 
     void KV::close() {
-        ScopedLock lock(lock_);
         ::close(fd_);
     }
 
