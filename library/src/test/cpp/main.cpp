@@ -9,11 +9,11 @@ int main(int argc, char *argv[]) {
     std::cout << "create kv" << std::endl;
     nkv::KV *kv = nkv::KV::create(argv[2]);
     std::cout << "write" << std::endl;
-    kv->write<nkv::kv_string_t>("string", "hello world");
-    kv->write<nkv::kv_boolean_t>("boolean", true);
-    kv->write<nkv::kv_float_t>("float", 2);
-    kv->write<nkv::kv_int32_t>("int32", 0x12345678);
-    kv->write<nkv::kv_int64_t>("int64", 0x1234567878563412);
+    kv->write("string", "hello world");
+    kv->write("boolean", true);
+    kv->write("float", 2);
+    kv->write("int32", 0x12345678);
+    kv->write("int64", 0x1234567878563412);
     std::cout << "read all" << std::endl;
     kv->read_all([=](const char *const key, const nkv::byte *value, nkv::byte type, size_t size) {
         printf("key: %s, value: ", key);
