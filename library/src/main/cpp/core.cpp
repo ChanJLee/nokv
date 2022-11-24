@@ -131,7 +131,7 @@ namespace nkv {
         }
 
         byte *begin = mem_begin(kv->map_);
-        int crc = crc32(0, begin, kv->map_->size_);
+        uint32_t crc = crc32(0, begin, kv->map_->size_);
         LOGD("prev crc: 0x%x, current crc: 0x%x", kv->map_->crc_, crc);
         return crc != kv->map_->crc_;
     }
