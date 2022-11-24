@@ -18,7 +18,7 @@ namespace nkv {
     const int TYPE_STRING = 'S';
 
     typedef const char *kv_string_t;
-    typedef byte kv_boolean_t;
+    typedef bool kv_boolean_t;
     typedef float kv_float_t;
     typedef int32_t kv_int32_t;
     typedef int64_t kv_int64_t;
@@ -80,7 +80,7 @@ namespace nkv {
 
         static size_t size(type_t v) { return 1; }
 
-        static byte *value(type_t &v) { return &v; }
+        static byte *value(type_t &v) { return reinterpret_cast<byte *>(&v); }
     };
 
     class KV {
@@ -94,25 +94,35 @@ namespace nkv {
                                               capacity_(capacity) {
         }
 
-        int read_int32(const char *const key, kv_int32_t &v);
-
-        int read_float(const char *const key, float &v);
-
-        int read_int64(const char *const key, kv_int64_t &v);
-
-        int read_boolean(const char *const key, bool &v);
-
-        int read_string(const char *const key, char **v);
-
         int read(const char *const key, byte **value);
-
-    private:
 
         int write(const char *const key, byte *value, byte type, size_t size);
 
         static int check_kv(KV *kv);
 
     public:
+        template<class T>
+        int read(const char *const key, T &ret) {
+            static_assert(Entry<T>::kv_type,
+                          "only support kv_boolean_t/kv_string_t/kv_int32_t/kv_int64_t/kv_float_t");
+            byte *ptr = nullptr;
+            if (read(key, &ptr)) {
+                return -1;
+            }
+            memcpy(&ret, ptr + 1, Entry<T>::size(ret));
+            return 0;
+        }
+
+        template<>
+        int read(const char *const key, kv_string_t &ret) {
+            byte *ptr = nullptr;
+            if (read(key, &ptr)) {
+                return -1;
+            }
+            ret = (char *) ptr + 1;
+            return 0;
+        }
+
         template<class T>
         int write(const char *const key, T v) {
             static_assert(Entry<T>::kv_type,

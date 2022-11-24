@@ -122,56 +122,6 @@ namespace nkv {
         ::close(fd_);
     }
 
-    int KV::read_int32(const char *const key, int32_t &v) {
-        ScopedLock lock(lock_);
-        byte *ptr = nullptr;
-        if (read(key, &ptr)) {
-            return -1;
-        }
-        memcpy(&v, ptr + 1, 4);
-        return 0;
-    }
-
-    int KV::read_float(const char *const key, float &v) {
-        ScopedLock lock(lock_);
-        byte *ptr = nullptr;
-        if (read(key, &ptr)) {
-            return -1;
-        }
-        memcpy(&v, ptr + 1, 4);
-        return 0;
-    }
-
-    int KV::read_int64(const char *const key, int64_t &v) {
-        ScopedLock lock(lock_);
-        byte *ptr = nullptr;
-        if (read(key, &ptr)) {
-            return -1;
-        }
-        memcpy(&v, ptr + 1, 8);
-        return 0;
-    }
-
-    int KV::read_boolean(const char *const key, bool &v) {
-        ScopedLock lock(lock_);
-        byte *ptr = nullptr;
-        if (read(key, &ptr)) {
-            return -1;
-        }
-        memcpy(&v, ptr + 1, 1);
-        return 0;
-    }
-
-    int KV::read_string(const char *const key, char **v) {
-        ScopedLock lock(lock_);
-        byte *ptr = nullptr;
-        if (read(key, &ptr)) {
-            return -1;
-        }
-        *v = (char *) ptr + 1;
-        return 0;
-    }
-
     int KV::check_kv(KV *kv) {
         // todo check
         if (kv == nullptr) {
