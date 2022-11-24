@@ -16,3 +16,4 @@ local.properties
 /library/src/test/cpp/main
 /library/src/test/cpp/out/
 /library/src/test/cpp/.vscode/settings.json
+/library/src/test/cpp/multi_process

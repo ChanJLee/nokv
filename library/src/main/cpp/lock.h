@@ -18,11 +18,12 @@ namespace nkv {
         void unlock();
     };
 
+    template <typename T>
     class ScopedLock {
-        Lock &lock_;
+        T &lock_;
     public:
-        ScopedLock(Lock &lock): lock_(lock) {
-            lock.lock();
+        ScopedLock(T &lock) : lock_(lock) {
+            lock_.lock();
         }
 
         ~ScopedLock() {

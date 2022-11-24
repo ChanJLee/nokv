@@ -202,7 +202,9 @@ namespace nkv {
             );
         }
 
-        Lock &lock() { return lock_; }
+        void lock() { lock_.lock(); }
+
+        void unlock() { lock_.unlock(); }
 
         void flush();
 
