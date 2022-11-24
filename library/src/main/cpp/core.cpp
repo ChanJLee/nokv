@@ -122,7 +122,6 @@ namespace nkv {
     }
 
     int KV::check_kv(KV *kv) {
-        // todo check
         if (kv == nullptr) {
             return -1;
         }
