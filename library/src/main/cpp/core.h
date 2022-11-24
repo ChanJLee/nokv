@@ -94,11 +94,6 @@ namespace nkv {
                                               capacity_(capacity) {
         }
 
-    public:
-        void flush();
-
-        void close();
-
         int read_int32(const char *const key, kv_int32_t &v);
 
         int read_float(const char *const key, float &v);
@@ -109,16 +104,7 @@ namespace nkv {
 
         int read_string(const char *const key, char **v);
 
-        size_t size() const { return map_->size_; }
-
-        int read_all(
-                const std::function<void(const char *const, const byte *, byte, size_t size)> &fnc);
-
-        bool contains(const char *const key);
-
         int read(const char *const key, byte **value);
-
-        Lock &lock() { return lock_; }
 
     private:
 
@@ -137,6 +123,19 @@ namespace nkv {
                          Entry<T>::size(v)
             );
         }
+
+        Lock &lock() { return lock_; }
+
+        void flush();
+
+        void close();
+
+        size_t size() const { return map_->size_; }
+
+        int read_all(
+                const std::function<void(const char *const, const byte *, byte, size_t size)> &fnc);
+
+        bool contains(const char *const key);
 
         static KV *create(const char *file);
 
