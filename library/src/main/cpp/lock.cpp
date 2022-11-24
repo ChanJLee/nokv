@@ -8,16 +8,14 @@
 namespace nokv {
     void Lock::lock() {
         thread_lock_.lock();
-        int code = 0;
-        for (int i = 0; i < 3 && (code = flock(fd_, LOCK_EX)) != 0; ++i) {
+        for (int i = 0; i < 3 && flock(fd_, LOCK_EX) != 0; ++i) {
             LOGD("lock %d failed, times: %d", fd_, i);
         }
     }
 
     void Lock::unlock() {
         thread_lock_.unlock();
-        int code = 0;
-        for (int i = 0; i < 3 && (code = flock(fd_, LOCK_UN)) != 0; ++i) {
+        for (int i = 0; i < 3 && flock(fd_, LOCK_UN) != 0; ++i) {
             LOGD("unlock %d failed, times: %d", fd_, i);
         }
     }
