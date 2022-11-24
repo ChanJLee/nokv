@@ -3,16 +3,29 @@
 #include <string>
 #include <inttypes.h>
 
-template<class T, class O>
+template<class I, class O>
 O test_cast() {
-    T v1 = 0;
-    O v2;
-    return v2 = v1;
+    I v1 = 0;
+    O v2 = 1;
+    return v2 = (O) (v1);
 }
 
 int main(int argc, char *argv[]) {
-
-
+//    test_cast<nkv::kv_boolean_t , nkv::kv_float_t>();
+//    test_cast<nkv::kv_boolean_t , nkv::kv_int32_t>();
+//    test_cast<nkv::kv_boolean_t , nkv::kv_int64_t>();
+//
+//    test_cast<nkv::kv_float_t , nkv::kv_boolean_t>();
+//    test_cast<nkv::kv_float_t , nkv::kv_int32_t>();
+//    test_cast<nkv::kv_float_t , nkv::kv_int64_t>();
+//
+//    test_cast<nkv::kv_int32_t , nkv::kv_float_t>();
+//    test_cast<nkv::kv_int32_t , nkv::kv_boolean_t>();
+//    test_cast<nkv::kv_int32_t , nkv::kv_int64_t>();
+//
+//    test_cast<nkv::kv_int64_t , nkv::kv_float_t>();
+//    test_cast<nkv::kv_int64_t , nkv::kv_int32_t>();
+//    test_cast<nkv::kv_int64_t , nkv::kv_boolean_t>();
 
     std::cout << "init" << std::endl;
     nkv::init(argv[1]);

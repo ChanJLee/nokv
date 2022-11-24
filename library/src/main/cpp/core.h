@@ -44,7 +44,7 @@ namespace nkv {
 
         byte *value() { return reinterpret_cast<byte *>(&v_); }
 
-        static bool compat(kv_type_t type) { return type != TYPE_STRING && type != TYPE_FLOAT; }
+        static bool compat(kv_type_t type) { return type == TYPE_INT32 || type == TYPE_BOOLEAN; }
     };
 
     template<>
@@ -62,7 +62,7 @@ namespace nkv {
 
         byte *value() { return reinterpret_cast<byte *>(&v_); }
 
-        static bool compat(kv_type_t type) { return type != TYPE_STRING && type != TYPE_INT64; }
+        static bool compat(kv_type_t type) { return type == TYPE_FLOAT; }
     };
 
     template<>
@@ -80,7 +80,9 @@ namespace nkv {
 
         byte *value() { return reinterpret_cast<byte *>(&v_); }
 
-        static bool compat(kv_type_t type) { return type != TYPE_STRING && type != TYPE_FLOAT; }
+        static bool compat(kv_type_t type) {
+            return type == TYPE_INT32 || type == TYPE_BOOLEAN || type == TYPE_INT64;
+        }
     };
 
     template<>
@@ -98,7 +100,7 @@ namespace nkv {
 
         byte *value() { return (byte *) (v_); }
 
-        static bool compat(kv_type_t type) { return true; }
+        static bool compat(kv_type_t type) { return type == TYPE_STRING; }
     };
 
     template<>
@@ -170,17 +172,16 @@ namespace nkv {
                     return cast_stream<kv_int64_t, T>(ptr, ret);
             }
 
-            return -1;
-        }
+            if (ptr[0] == TYPE_STRING) {
+                if (!Entry<kv_string_t>::compat(ptr[0])) {
+                    return -1;
+                }
 
-        template<>
-        int read(const char *const key, kv_string_t &ret) {
-            byte *ptr = nullptr;
-            if (read(key, &ptr)) {
-                return -1;
+                ret = (char *) ptr + 1;
+                return 0;
             }
-            ret = (char *) ptr + 1;
-            return 0;
+
+            return -1;
         }
 
         template<class T>
