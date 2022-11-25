@@ -1,6 +1,7 @@
 #include <jni.h>
 #include "core.h"
 #include "scoped_str.h"
+#include "lock.h"
 
 extern "C"
 JNIEXPORT jlong JNICALL
@@ -28,6 +29,7 @@ JNIEXPORT jboolean JNICALL
 Java_me_chan_nkv_NoKV_nativeContains(JNIEnv *env, jclass clazz, jlong ptr, jstring key) {
     auto kv = (nokv::KV *) ptr;
     DEF_C_STR(env, key, k);
+    nokv::ScopedLock<nokv::KV> lock(*kv);
     return kv->contains(k);
 }
 
@@ -38,8 +40,11 @@ Java_me_chan_nkv_NoKV_nativeGetInt(JNIEnv *env, jclass clazz, jlong ptr, jstring
     auto kv = (nokv::KV *) ptr;
     DEF_C_STR(env, key, k);
     nokv::kv_int32_t v = 0;
-    if (kv->read(k, v)) {
-        return def_value;
+    {
+        nokv::ScopedLock<nokv::KV> lock(*kv);
+        if (kv->read(k, v)) {
+            return def_value;
+        }
     }
     return v;
 }
@@ -50,9 +55,12 @@ Java_me_chan_nkv_NoKV_nativeGetBoolean(JNIEnv *env, jclass clazz, jlong ptr, jst
                                        jboolean def_value) {
     auto kv = (nokv::KV *) ptr;
     DEF_C_STR(env, key, k);
-    nokv::kv_boolean_t v = 0;
-    if (kv->read(k, v)) {
-        return def_value;
+    nokv::kv_boolean_t v = false;
+    {
+        nokv::ScopedLock<nokv::KV> lock(*kv);
+        if (kv->read(k, v)) {
+            return def_value;
+        }
     }
     return v;
 }
@@ -64,8 +72,11 @@ Java_me_chan_nkv_NoKV_nativeGetLong(JNIEnv *env, jclass clazz, jlong ptr, jstrin
     auto kv = (nokv::KV *) ptr;
     DEF_C_STR(env, key, k);
     nokv::kv_int64_t v = 0;
-    if (kv->read(k, v)) {
-        return def_value;
+    {
+        nokv::ScopedLock<nokv::KV> lock(*kv);
+        if (kv->read(k, v)) {
+            return def_value;
+        }
     }
     return v;
 }
@@ -77,8 +88,11 @@ Java_me_chan_nkv_NoKV_nativeGetFloat(JNIEnv *env, jclass clazz, jlong ptr, jstri
     auto kv = (nokv::KV *) ptr;
     DEF_C_STR(env, key, k);
     nokv::kv_float_t v = 0;
-    if (kv->read(k, v)) {
-        return def_value;
+    {
+        nokv::ScopedLock<nokv::KV> lock(*kv);
+        if (kv->read(k, v)) {
+            return def_value;
+        }
     }
     return v;
 }
@@ -90,8 +104,88 @@ Java_me_chan_nkv_NoKV_nativeGetString(JNIEnv *env, jclass clazz, jlong ptr, jstr
     auto kv = (nokv::KV *) ptr;
     DEF_C_STR(env, key, k);
     nokv::kv_string_t v = nullptr;
-    if (kv->read(k, v)) {
-        return def_value;
+    {
+        nokv::ScopedLock<nokv::KV> lock(*kv);
+        if (kv->read(k, v)) {
+            return def_value;
+        }
     }
     return env->NewStringUTF(v);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_me_chan_nkv_NoKvEditor_nativeBeginTransaction(JNIEnv *env, jclass clazz, jlong ptr) {
+    auto kv = (nokv::KV *) ptr;
+    kv->lock();
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_me_chan_nkv_NoKvEditor_nativeEndTransaction(JNIEnv *env, jclass clazz, jlong ptr) {
+    auto kv = (nokv::KV *) ptr;
+    kv->unlock();
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_me_chan_nkv_NoKvEditor_nativeClear(JNIEnv *env, jclass clazz, jlong ptr) {
+    auto kv = (nokv::KV *) ptr;
+    return kv->remove_all() == 0;
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_me_chan_nkv_NoKvEditor_nativeRemove(JNIEnv *env, jclass clazz, jlong ptr, jstring key) {
+    auto kv = (nokv::KV *) ptr;
+    DEF_C_STR(env, key, k);
+    return kv->remove(k) == 0;
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_me_chan_nkv_NoKvEditor_nativePutString(JNIEnv *env, jclass clazz, jlong ptr, jstring key,
+                                            jstring value) {
+    // TODO: implement nativePutString()
+    return true;
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_me_chan_nkv_NoKvEditor_nativePutStringSet(JNIEnv *env, jclass clazz, jlong ptr, jstring key,
+                                               jobject value) {
+    // TODO: implement nativePutStringSet()
+    return true;
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_me_chan_nkv_NoKvEditor_nativePutInteger(JNIEnv *env, jclass clazz, jlong ptr, jstring key,
+                                             jint value) {
+    // TODO: implement nativePutInteger()
+    return true;
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_me_chan_nkv_NoKvEditor_nativePutLong(JNIEnv *env, jclass clazz, jlong ptr, jstring key,
+                                          jlong value) {
+    // TODO: implement nativePutLong()
+    return true;
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_me_chan_nkv_NoKvEditor_nativePutFloat(JNIEnv *env, jclass clazz, jlong ptr, jstring key,
+                                           jfloat value) {
+    // TODO: implement nativePutFloat()
+    return true;
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_me_chan_nkv_NoKvEditor_nativePutBoolean(JNIEnv *env, jclass clazz, jlong ptr, jstring key,
+                                             jboolean value) {
+    // TODO: implement nativePutBoolean()
+    return true;
 }

@@ -172,7 +172,7 @@ namespace nokv {
         }
 
         void *mem = mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-        if (mem == nullptr) {
+        if (mem == MAP_FAILED) {
             LOGI("mmap %s failed", file);
             return nullptr;
         }
@@ -231,6 +231,16 @@ namespace nokv {
             return false;
         }
         return ptr != nullptr;
+    }
+
+    int KV::remove_all() {
+        // todo
+        return 0;
+    }
+
+    int KV::remove(const char *const key) {
+        // todo
+        return 0;
     }
 
     int init(const char *meta_file) {
