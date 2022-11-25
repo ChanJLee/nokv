@@ -18,14 +18,31 @@ namespace nokv {
     const int TYPE_ARRAY = 'A';
     const int TYPE_NULL = 'N';
 
-    struct kv_null_t {
-    };
-
     struct kv_array_t {
+        size_t byte_size_;
+        size_t elem_size_;
+        byte *data_;
 
+        /* 字节长度 */
+        size_t byte_size() { return byte_size_; }
+
+        /* 元素长度 */
+        size_t elem_size() { return elem_size_; }
+
+        static int from_stream(byte *stream, kv_array_t *array);
+
+        static int to_stream(byte *stream, kv_array_t *array);
     };
 
-    typedef const char *kv_string_t;
+    struct kv_string_t {
+        size_t size_;
+        const char *str_;
+
+        static int from_stream(byte *stream, kv_string_t *str);
+
+        static int to_stream(byte *stream, kv_string_t *array);
+    };
+
     typedef bool kv_boolean_t;
     typedef float kv_float_t;
     typedef int32_t kv_int32_t;
@@ -39,118 +56,26 @@ namespace nokv {
         uint32_t size_;
     } __attribute__ ((aligned (4)));
 
-    template<typename T>
     class Entry {
-
-    };
-
-    template<>
-    class Entry<kv_int32_t> {
+        kv_type_t type_;
+        union {
+            kv_boolean_t boolean_;
+            kv_float_t float_;
+            kv_int32_t int32_;
+            kv_int64_t int64_;
+            kv_string_t string_;
+            kv_array_t array_;
+        } data_;
     public:
-        using type_t = kv_int32_t;
-    private:
-        type_t v_;
-    public:
-        Entry(type_t v) : v_(v) {}
+        Entry() : type_(TYPE_NULL) {}
 
-        const static kv_type_t kv_type = TYPE_INT32;
+        bool is_null() const { return type_ == TYPE_NULL; }
 
-        static size_t size() { return 4; }
+        kv_type_t type() const { return type_; }
 
-        byte *value() { return reinterpret_cast<byte *>(&v_); }
+        static int from_stream(byte *stream, Entry *entry);
 
-        static bool compat(kv_type_t type) { return type == TYPE_INT32 || type == TYPE_BOOLEAN; }
-    };
-
-    template<>
-    class Entry<kv_float_t> {
-    public:
-        using type_t = kv_float_t;
-    private:
-        type_t v_;
-    public:
-        Entry(type_t v) : v_(v) {}
-
-        const static kv_type_t kv_type = TYPE_FLOAT;
-
-        static size_t size() { return 4; }
-
-        byte *value() { return reinterpret_cast<byte *>(&v_); }
-
-        static bool compat(kv_type_t type) { return type == TYPE_FLOAT; }
-    };
-
-    template<>
-    class Entry<kv_int64_t> {
-    public:
-        using type_t = kv_int64_t;
-    private:
-        type_t v_;
-    public:
-        Entry(type_t v) : v_(v) {}
-
-        const static kv_type_t kv_type = TYPE_INT64;
-
-        static size_t size() { return 8; }
-
-        byte *value() { return reinterpret_cast<byte *>(&v_); }
-
-        static bool compat(kv_type_t type) {
-            return type == TYPE_INT32 || type == TYPE_BOOLEAN || type == TYPE_INT64;
-        }
-    };
-
-    template<>
-    class Entry<kv_string_t> {
-    public:
-        using type_t = kv_string_t;
-    private:
-        type_t v_;
-    public:
-        Entry(type_t v) : v_(v) {}
-
-        const static kv_type_t kv_type = TYPE_STRING;
-
-        size_t size() { return strlen(v_) + 1; }
-
-        byte *value() { return (byte *) (v_); }
-
-        static bool compat(kv_type_t type) { return type == TYPE_STRING; }
-    };
-
-    template<>
-    class Entry<kv_boolean_t> {
-    public:
-        using type_t = kv_boolean_t;
-    private:
-        type_t v_;
-    public:
-        Entry(type_t v) : v_(v) {}
-
-        const static kv_type_t kv_type = TYPE_BOOLEAN;
-
-        static size_t size() { return 1; }
-
-        byte *value() { return reinterpret_cast<byte *>(&v_); }
-
-        static bool compat(kv_type_t type) { return type == TYPE_BOOLEAN; }
-    };
-
-    template<>
-    class Entry<kv_null_t> {
-    public:
-        using type_t = kv_null_t;
-    private:
-    public:
-        Entry(type_t) {}
-
-        const static kv_type_t kv_type = TYPE_NULL;
-
-        static size_t size() { return 0; }
-
-        byte *value() { return nullptr; }
-
-        static bool compat(kv_type_t type) { return false; }
+        static int get_entry_size(byte *entry);
     };
 }
 
