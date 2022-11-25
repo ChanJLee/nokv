@@ -18,13 +18,18 @@ namespace nokv {
     const int TYPE_ARRAY = 'A';
     const int TYPE_NULL = 'N';
 
+    struct kv_null_t {
+    };
+
+    struct kv_array_t {
+
+    };
+
     typedef const char *kv_string_t;
     typedef bool kv_boolean_t;
     typedef float kv_float_t;
     typedef int32_t kv_int32_t;
     typedef int64_t kv_int64_t;
-    typedef void kv_null_t;
-    typedef void **kv_array_t;
 
     struct Map {
         char magic_[4];
