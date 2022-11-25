@@ -187,7 +187,7 @@ namespace nokv {
             LOGD("check crc failed");
             kv->close();
             delete kv;
-            remove(file);
+            ::remove(file);
             return nullptr;
         }
         return kv;
