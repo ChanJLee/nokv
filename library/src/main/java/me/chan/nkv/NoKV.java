@@ -50,7 +50,7 @@ public class NoKV implements SharedPreferences {
 	@Nullable
 	@Override
 	public String getString(String key, @Nullable String defValue) {
-		return null;
+		return nativeGetString(mPtr, key, defValue);
 	}
 
 	@Nullable
@@ -66,17 +66,17 @@ public class NoKV implements SharedPreferences {
 
 	@Override
 	public long getLong(String key, long defValue) {
-		return 0;
+		return nativeGetLong(mPtr, key, defValue);
 	}
 
 	@Override
 	public float getFloat(String key, float defValue) {
-		return 0;
+		return nativeGetFloat(mPtr, key, defValue);
 	}
 
 	@Override
 	public boolean getBoolean(String key, boolean defValue) {
-		return false;
+		return nativeGetBoolean(mPtr, key, defValue);
 	}
 
 	@Override
@@ -86,7 +86,7 @@ public class NoKV implements SharedPreferences {
 
 	@Override
 	public Editor edit() {
-		return null;
+		return new NoKvEditor(mPtr);
 	}
 
 	@Override
@@ -105,6 +105,65 @@ public class NoKV implements SharedPreferences {
 		nativeRelease(mPtr);
 	}
 
+	private static class NoKvEditor implements Editor {
+		private final long mPtr;
+
+		public NoKvEditor(long ptr) {
+			mPtr = ptr;
+		}
+
+		@Override
+		public Editor putString(String key, @Nullable String value) {
+			return null;
+		}
+
+		@Override
+		public Editor putStringSet(String key, @Nullable Set<String> values) {
+			return null;
+		}
+
+		@Override
+		public Editor putInt(String key, int value) {
+			return null;
+		}
+
+		@Override
+		public Editor putLong(String key, long value) {
+			return null;
+		}
+
+		@Override
+		public Editor putFloat(String key, float value) {
+			return null;
+		}
+
+		@Override
+		public Editor putBoolean(String key, boolean value) {
+			return null;
+		}
+
+		@Override
+		public Editor remove(String key) {
+			return null;
+		}
+
+		@Override
+		public Editor clear() {
+			return null;
+		}
+
+		@Override
+		public boolean commit() {
+			apply();
+			return true;
+		}
+
+		@Override
+		public void apply() {
+			nativeFlush(mPtr);
+		}
+	}
+
 	private static native long nativeCreate(String kv);
 
 	private static native int nativeInit(String metaFile);
@@ -112,6 +171,26 @@ public class NoKV implements SharedPreferences {
 	private static native void nativeRelease(long ptr);
 
 	private static native int nativeGetInt(long ptr, String key, int defValue);
+
+	private static native boolean nativeGetBoolean(long ptr, String key, boolean defValue);
+
+	private static native long nativeGetLong(long ptr, String key, long defValue);
+
+	private static native float nativeGetFloat(long ptr, String key, float defValue);
+
+	private static native String nativeGetString(long ptr, String key, String defValue);
+
+	private static native int nativeSetInt(long ptr, String key, int value);
+
+	private static native boolean nativeSetBoolean(long ptr, String key, boolean value);
+
+	private static native long nativeSetLong(long ptr, String key, long value);
+
+	private static native float nativeSetFloat(long ptr, String key, float value);
+
+	private static native String nativeSetString(long ptr, String key, String value);
+
+	private static native void nativeFlush(long ptr);
 
 	private static native boolean nativeContains(long ptr, String key);
 }
