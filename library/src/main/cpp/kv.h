@@ -18,65 +18,83 @@ namespace nokv {
     const int TYPE_ARRAY = 'A';
     const int TYPE_NULL = 'N';
 
-    struct kv_array_t {
-        size_t byte_size_;
-        size_t elem_size_;
-        byte *data_;
-
-        /* 字节长度 */
-        size_t byte_size() { return byte_size_; }
-
-        /* 元素长度 */
-        size_t elem_size() { return elem_size_; }
-
-        static int from_stream(byte *stream, kv_array_t *array);
-
-        static int to_stream(byte *stream, kv_array_t *array);
-    };
-
-    struct kv_string_t {
-        size_t size_;
-        const char *str_;
-
-        static int from_stream(byte *stream, kv_string_t *str);
-
-        static int to_stream(byte *stream, kv_string_t *array);
-    };
+    const int ERROR_OVERFLOW = -1;
+    const int ERROR_NOT_FOUND = -2;
+    const int ERROR_TYPE_ERROR = -3;
+    const int VALUE_NULL = 1;
 
     typedef bool kv_boolean_t;
     typedef float kv_float_t;
     typedef int32_t kv_int32_t;
     typedef int64_t kv_int64_t;
 
-    struct Map {
+    struct kv_string_t {
+        size_t size_;
+        const char *str_;
+
+        static int from_stream(byte *stream, kv_string_t *str);
+    };
+
+    struct kv_array_t {
+        size_t capacity_;
+        byte *end_;
+        /* 1u + 4u + elements */
+        byte *begin_;
+        const bool free_;
+
+        kv_array_t(size_t len) : free_(true) {
+            begin_ = new byte[len];
+            capacity_ = len;
+            begin_[0] = TYPE_ARRAY;
+            end_ = begin_ + 5;
+        }
+
+        ~kv_array_t() {
+            if (free_) {
+                delete[] begin_;
+            }
+        }
+
+        kv_array_t() : free_(false) {}
+
+        // todo put 的时候 begin 内的报文可以直接写
+
+        static int from_stream(byte *stream, kv_array_t *array);
+    };
+
+    class Map {
         char magic_[4];
         uint16_t order;
         uint16_t version_;
         uint32_t crc_;
         uint32_t size_;
-    } __attribute__ ((aligned (4)));
 
-    class Entry {
-        kv_type_t type_;
-        union {
-            kv_boolean_t boolean_;
-            kv_float_t float_;
-            kv_int32_t int32_;
-            kv_int64_t int64_;
-            kv_string_t string_;
-            kv_array_t array_;
-        } data_;
     public:
-        Entry() : type_(TYPE_NULL) {}
+        byte *begin() { return (byte *) this + sizeof(Map); }
 
-        bool is_null() const { return type_ == TYPE_NULL; }
+        byte *end() { return begin() + size_; }
 
-        kv_type_t type() const { return type_; }
+        uint32_t size() const { return size_; }
 
-        static int from_stream(byte *stream, Entry *entry);
+        int put_boolean(const char *const, const kv_boolean_t &);
 
-        static int get_entry_size(byte *entry);
-    };
+        int put_int32(const char *const, const kv_int32_t &);
+
+        int put_int64(const char *const, const kv_int64_t &);
+
+        int put_float(const char *const, const kv_float_t &);
+
+        int put_string(const char *const, const kv_string_t &);
+
+        int put_array(const char *const, const kv_array_t &);
+
+        int put_null(const char *const);
+
+    private:
+        int get_value(const char *const, byte **entry);
+
+        int put_value(const char *const, kv_type_t, byte *value, size_t len);
+    } __attribute__ ((aligned (4)));
 }
 
 #endif //NKV_IO_H
