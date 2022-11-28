@@ -8,30 +8,6 @@
 
 namespace nokv {
 
-    class Entry {
-        kv_type_t type_;
-        union data {
-            kv_boolean_t boolean_;
-            kv_float_t float_;
-            kv_int32_t int32_;
-            kv_int64_t int64_;
-            kv_string_t string_;
-            kv_array_t array_;
-        } data_;
-    public:
-        Entry() : type_(TYPE_NULL) {}
-
-        bool is_null() const { return type_ == TYPE_NULL; }
-
-        kv_type_t type() const { return type_; }
-
-        data &data() { return data_; }
-
-        static int from_stream(byte *stream, Entry *entry);
-
-        static int get_entry_size(byte *entry);
-    };
-
     int nokv::Entry::get_entry_size(nokv::byte *entry) {
         switch (entry[0]) {
             case nokv::TYPE_INT32:
@@ -278,7 +254,7 @@ namespace nokv {
             return ERROR_TYPE_ERROR;
         }
 
-        rtn = entry.data().boolean_;
+        rtn = entry.data_.boolean_;
         return 0;
     }
 
@@ -307,9 +283,9 @@ namespace nokv {
         }
 
         if (entry.type() == TYPE_BOOLEAN) {
-            rtn = entry.data().boolean_;
+            rtn = entry.data_.boolean_;
         } else {
-            rtn = entry.data().int32_;
+            rtn = entry.data_.int32_;
         }
         return 0;
     }
@@ -338,11 +314,11 @@ namespace nokv {
         }
 
         if (entry.type() == TYPE_BOOLEAN) {
-            rtn = entry.data().boolean_;
+            rtn = entry.data_.boolean_;
         } else if (entry.type() == TYPE_INT32) {
-            rtn = entry.data().int32_;
+            rtn = entry.data_.int32_;
         } else {
-            rtn = entry.data().int64_;
+            rtn = entry.data_.int64_;
         }
         return 0;
     }
@@ -371,11 +347,11 @@ namespace nokv {
         }
 
         if (entry.type() == TYPE_BOOLEAN) {
-            rtn = entry.data().boolean_;
+            rtn = entry.data_.boolean_;
         } else if (entry.type() == TYPE_INT32) {
-            rtn = (kv_float_t) entry.data().int32_;
+            rtn = (kv_float_t) entry.data_.int32_;
         } else {
-            rtn = entry.data().float_;
+            rtn = entry.data_.float_;
         }
         return 0;
     }
@@ -401,7 +377,7 @@ namespace nokv {
             return ERROR_TYPE_ERROR;
         }
 
-        rtn = entry.data().string_;
+        rtn = entry.data_.string_;
         return 0;
     }
 
@@ -426,7 +402,38 @@ namespace nokv {
             return ERROR_TYPE_ERROR;
         }
 
-        rtn = entry.data().array_;
+        rtn = entry.data_.array_;
+        return 0;
+    }
+
+    bool Map::contains(const char *const key) {
+        byte *ptr = nullptr;
+        if (get_value(key, &ptr)) {
+            return false;
+        }
+        return ptr != nullptr;
+    }
+
+    int Map::read_all(
+            const std::function<void(const char *const, Entry *)> &fnc) {
+        byte *begin = this->begin();
+        byte *end = this->end();
+
+        Entry entry;
+        while (begin < end) {
+            char *entry_key = reinterpret_cast<char *>(begin);
+            size_t key_len = strlen(entry_key);
+            byte *data = begin + key_len + 1;
+            int entry_size = Entry::get_entry_size(data);
+            if (entry_size < 0 || Entry::from_stream(data, &entry)) {
+                /* invalid state */
+                return ERROR_INVALID_STATE;
+            }
+
+            fnc((const char *const) begin, &entry);
+
+            begin = data + entry_size;
+        }
         return 0;
     }
 

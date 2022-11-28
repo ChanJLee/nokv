@@ -6,6 +6,7 @@
 #define NKV_IO_H
 
 #include <inttypes.h>
+#include <functional>
 
 namespace nokv {
     typedef unsigned char byte;
@@ -69,6 +70,42 @@ namespace nokv {
         void resize();
     };
 
+    class Entry {
+        kv_type_t type_;
+        union {
+            kv_boolean_t boolean_;
+            kv_float_t float_;
+            kv_int32_t int32_;
+            kv_int64_t int64_;
+            kv_string_t string_;
+            kv_array_t array_;
+        } data_;
+
+        friend class Map;
+    public:
+        Entry() : type_(TYPE_NULL) {}
+
+        bool is_null() const { return type_ == TYPE_NULL; }
+
+        kv_type_t type() const { return type_; }
+
+        kv_boolean_t as_boolean() { return data_.boolean_; }
+
+        kv_float_t as_float() { return data_.float_; }
+
+        kv_int32_t as_int32() { return data_.int32_; }
+
+        kv_int64_t as_int64() { return data_.int64_; }
+
+        const kv_string_t& as_string() { return data_.string_; }
+
+        const kv_array_t &as_array() { return data_.array_; }
+
+        static int from_stream(byte *stream, Entry *entry);
+
+        static int get_entry_size(byte *entry);
+    };
+
     class Map {
         char magic_[4];
         uint16_t order;
@@ -82,6 +119,8 @@ namespace nokv {
         byte *end() { return begin() + size_; }
 
         uint32_t size() const { return size_; }
+
+        uint32_t crc() const { return crc_; }
 
         int put_boolean(const char *const, const kv_boolean_t &);
 
@@ -108,6 +147,11 @@ namespace nokv {
         int get_string(const char *const, kv_string_t &);
 
         int get_array(const char *const, kv_array_t &);
+
+        bool contains(const char *const key);
+
+        int read_all(
+                const std::function<void(const char *const, Entry *entry)> &fnc);
 
     private:
         int get_value(const char *const, byte **ret);

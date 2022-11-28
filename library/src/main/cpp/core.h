@@ -15,83 +15,18 @@ namespace nokv {
         Lock lock_;
         int fd_;
         Map *map_;
-        int capacity_;
+        size_t capacity_;
 
-        KV(int fd, int capacity, void *mem) : lock_(fd), fd_(fd),
-                                              map_(reinterpret_cast<Map *>(mem)),
-                                              capacity_(capacity) {
+        KV(int fd, size_t capacity, void *mem) : lock_(fd), fd_(fd),
+                                                 map_(reinterpret_cast<Map *>(mem)),
+                                                 capacity_(capacity) {
         }
-
-        int read(const char *const key, byte **value);
-
-        int write(const char *const key, byte *value, byte type, size_t size);
 
         static int check_kv(KV *kv);
 
-        template<class T, class O>
-        int cast_stream(byte *ptr, O &ret) {
-            /* type compat */
-            if (!Entry<T>::compat(ptr[0])) {
-                return -1;
-            }
-
-            T tmp;
-            memcpy(&tmp, ptr + 1, Entry<T>::size());
-            ret = (T) tmp;
-            return 0;
-        }
+        void resize(size_t size);
 
     public:
-        template<class T>
-        int read(const char *const key, T &ret) {
-            static_assert(Entry<T>::kv_type,
-                          "only support kv_boolean_t/kv_string_t/kv_int32_t/kv_int64_t/kv_float_t");
-            byte *ptr = nullptr;
-            if (read(key, &ptr)) {
-                return -1;
-            }
-
-            switch (ptr[0]) {
-                case TYPE_INT32:
-                    return cast_stream<kv_int32_t, T>(ptr, ret);
-                case TYPE_FLOAT:
-                    return cast_stream<kv_float_t, T>(ptr, ret);
-                case TYPE_BOOLEAN:
-                    return cast_stream<kv_boolean_t, T>(ptr, ret);
-                case TYPE_INT64:
-                    return cast_stream<kv_int64_t, T>(ptr, ret);
-            }
-
-            return -1;
-        }
-
-        template<class T = kv_string_t>
-        int read(const char *const key, kv_string_t &ret) {
-            byte *ptr = nullptr;
-            if (read(key, &ptr)) {
-                return -1;
-            }
-
-            if (ptr[0] == TYPE_STRING) {
-                ret = (char *) ptr + 1;
-                return 0;
-            }
-
-            return -1;
-        }
-
-        template<class T>
-        int write(const char *const key, T v) {
-            static_assert(Entry<T>::kv_type,
-                          "only support kv_boolean_t/kv_string_t/kv_int32_t/kv_int64_t/kv_float_t");
-            Entry<T> entry(v);
-            return write(key,
-                         entry.value(),
-                         Entry<T>::kv_type,
-                         entry.size()
-            );
-        }
-
         void lock() { lock_.lock(); }
 
         void unlock() { lock_.unlock(); }
@@ -100,10 +35,10 @@ namespace nokv {
 
         void close();
 
-        size_t size() const { return map_->size_; }
+        size_t size() const { return map_->size(); }
 
         int read_all(
-                const std::function<void(const char *const, const byte *, byte, size_t size)> &fnc);
+                const std::function<void(const char *const, Entry *)> &fnc);
 
         bool contains(const char *const key);
 
@@ -111,12 +46,41 @@ namespace nokv {
 
         static void destroy(KV *kv);
 
+        static int init(const char *meta_file);
+
         int remove_all();
 
         int remove(const char *const key);
-    };
 
-    int init(const char *meta_file);
+        int put_boolean(const char *const, const kv_boolean_t &);
+
+        int put_int32(const char *const, const kv_int32_t &);
+
+        int put_int64(const char *const, const kv_int64_t &);
+
+        int put_float(const char *const, const kv_float_t &);
+
+        int put_array(const char *const, const kv_array_t &);
+
+        int put_null(const char *const);
+
+        int get_boolean(const char *const, kv_boolean_t &);
+
+        int get_int32(const char *const, kv_int32_t &);
+
+        int get_int64(const char *const, kv_int64_t &);
+
+        int get_float(const char *const, kv_float_t &);
+
+        int get_string(const char *const, kv_string_t &);
+
+        int get_array(const char *const, kv_array_t &);
+
+        int put_string(const char *const, const char *);
+
+    private:
+        int put_string(const char *const, const kv_string_t &);
+    };
 }
 
 #endif //NKV_CORE_H
