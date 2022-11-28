@@ -15,11 +15,10 @@ namespace nokv {
         Lock lock_;
         int fd_;
         Map *map_;
-        size_t capacity_;
 
         KV(int fd, size_t capacity, void *mem) : lock_(fd), fd_(fd),
-                                                 map_(reinterpret_cast<Map *>(mem)),
-                                                 capacity_(capacity) {
+                                map_(reinterpret_cast<Map *>(mem)) {
+            map_->capacity_ = capacity;
         }
 
         static int check_kv(KV *kv);

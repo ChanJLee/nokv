@@ -35,7 +35,7 @@ namespace nokv {
     }
 
     void KV::flush() {
-        ::msync(map_, capacity_, MS_SYNC);
+        ::msync(map_, map_->capacity(), MS_SYNC);
     }
 
     void KV::close() {
@@ -120,7 +120,7 @@ namespace nokv {
             return;
         }
 
-        munmap(kv->map_, kv->capacity_);
+        munmap(kv->map_, kv->map_->capacity());
         kv->close();
         delete kv;
     }
@@ -162,7 +162,7 @@ namespace nokv {
         } \
         \
         if (code == ERROR_OVERFLOW) { \
-            resize(capacity_ * 2); \
+            resize(map_->capacity() * 2); \
         } \
         \
         return map_->put_##type(key, v); \
@@ -187,7 +187,7 @@ namespace nokv {
         }
 
         if (code == ERROR_OVERFLOW) {
-            resize(capacity_ * 2);
+            resize(map_->capacity() * 2);
         }
 
         return map_->put_null(key);
