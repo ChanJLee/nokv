@@ -215,8 +215,9 @@ namespace nokv {
     }
 
     int KV::put_string(const char *const key, const char *str) {
-        nokv::kv_string_t s;
-        s.str_ = str;
+        nokv::kv_string_t s = {
+                .str_ = str
+        };
         return put_string(key, s);
     }
 }
