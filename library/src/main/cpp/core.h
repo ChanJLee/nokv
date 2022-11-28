@@ -78,7 +78,6 @@ namespace nokv {
 
         int put_string(const char *const, const char *);
 
-    private:
         int put_string(const char *const, const kv_string_t &);
     };
 }
