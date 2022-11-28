@@ -30,11 +30,10 @@ namespace nokv {
     typedef int64_t kv_int64_t;
 
     struct kv_string_t {
-        size_t size_;
         const char *str_;
-
-        static int from_stream(byte *stream, kv_string_t *str);
     };
+
+    struct Entry;
 
     struct kv_array_t {
         size_t capacity_;
@@ -48,11 +47,26 @@ namespace nokv {
 
         static int free(kv_array_t &array);
 
-        static int put_string(const kv_string_t &);
+        int put_string(const kv_string_t &);
 
-        static int put_null(const char *const);
+        int put_null();
 
-        static int get_string(kv_string_t &str);
+        class iterator {
+            byte *begin_;
+            byte *end_;
+            byte *it_;
+
+            iterator(byte *begin, byte *end) : begin_(begin), end_(end), it_(begin) {};
+        public:
+            bool next(Entry *entry);
+
+            friend class kv_array_t;
+        };
+
+        iterator it() { return iterator(begin_ + 5, end_); }
+
+    private:
+        void resize();
     };
 
     class Map {

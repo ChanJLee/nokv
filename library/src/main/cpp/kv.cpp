@@ -62,7 +62,8 @@ namespace nokv {
         }
 
         if (entry->type_ == TYPE_STRING) {
-            return nokv::kv_string_t::from_stream(stream, &entry->data_.string_);
+            entry->data_.string_.str_ = (const char *) (stream + 1);
+            return 0;
         }
 
         if (entry->type_ == TYPE_ARRAY) {
@@ -85,13 +86,51 @@ namespace nokv {
         return 0;
     }
 
-    int nokv::kv_string_t::from_stream(nokv::byte *stream, nokv::kv_string_t *str) {
-        if (str == nullptr) {
-            return -1;
-        }
-        str->str_ = (const char *) (stream + 1);
-        str->size_ = strlen(str->str_);
+    int kv_array_t::create(kv_array_t &array) {
+        array.capacity_ = 1024;
+        array.begin_ = new byte[array.capacity_];
+        array.begin_[0] = TYPE_ARRAY;
+        array.end_ = array.begin_ + 5 /* 1u(type) + 4u(len) */;
         return 0;
+    }
+
+    int kv_array_t::free(kv_array_t &array) {
+        delete[] array.begin_;
+        return 0;
+    }
+
+    int kv_array_t::put_string(const kv_string_t &str) {
+        size_t str_len = strlen(str.str_) + 1;
+        if (end_ + str_len > begin_ + capacity_) {
+            resize();
+        }
+        end_[0] = TYPE_STRING;
+        memcpy(end_ + 1, str.str_, str_len);
+        end_ = begin_ + str_len + 1;
+        return 0;
+    }
+
+    int kv_array_t::put_null() {
+        if (end_ + 1 > begin_ + capacity_) {
+            resize();
+        }
+        end_[0] = TYPE_NULL;
+        end_ = begin_ + 1;
+        return 0;
+    }
+
+    void kv_array_t::resize() {
+        size_t new_size = capacity_ * 2;
+        byte *buf = new byte[new_size];
+
+        size_t size = end_ - begin_;
+        memcpy(buf, begin_, size);
+
+        delete[] begin_;
+
+        begin_ = buf;
+        end_ = begin_ + size;
+        capacity_ = new_size;
     }
 
     int nokv::Map::put_array(const char *const key, const nokv::kv_array_t &array) {
@@ -99,7 +138,7 @@ namespace nokv {
     }
 
     int Map::put_string(const char *const key, const kv_string_t &str) {
-        return put_value(key, TYPE_STRING, (byte *) str.str_, str.size_ + 1);
+        return put_value(key, TYPE_STRING, (byte *) str.str_, strlen(str.str_) + 1);
     }
 
     int Map::put_boolean(const char *const key, const kv_boolean_t &v) {
@@ -389,5 +428,19 @@ namespace nokv {
 
         rtn = entry.data().array_;
         return 0;
+    }
+
+    bool kv_array_t::iterator::next(Entry *entry) {
+        if (it_ >= end_) {
+            return false;
+        }
+
+        int code = Entry::from_stream(it_, entry);
+        if (code != 0) {
+            return false;
+        }
+
+        it_ += Entry::get_entry_size(it_);
+        return true;
     }
 }
