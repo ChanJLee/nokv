@@ -21,6 +21,7 @@ namespace nokv {
     const int ERROR_OVERFLOW = -1;
     const int ERROR_NOT_FOUND = -2;
     const int ERROR_TYPE_ERROR = -3;
+    const int ERROR_INVALID_STATE = -4;
     const int VALUE_NULL = 1;
 
     typedef bool kv_boolean_t;
@@ -40,26 +41,18 @@ namespace nokv {
         byte *end_;
         /* 1u + 4u + elements */
         byte *begin_;
-        const bool free_;
-
-        kv_array_t(size_t len) : free_(true) {
-            begin_ = new byte[len];
-            capacity_ = len;
-            begin_[0] = TYPE_ARRAY;
-            end_ = begin_ + 5;
-        }
-
-        ~kv_array_t() {
-            if (free_) {
-                delete[] begin_;
-            }
-        }
-
-        kv_array_t() : free_(false) {}
-
-        // todo put 的时候 begin 内的报文可以直接写
 
         static int from_stream(byte *stream, kv_array_t *array);
+
+        static int create(kv_array_t &array);
+
+        static int free(kv_array_t &array);
+
+        static int put_string(const kv_string_t &);
+
+        static int put_null(const char *const);
+
+        static int get_string(kv_string_t &str);
     };
 
     class Map {
@@ -90,10 +83,24 @@ namespace nokv {
 
         int put_null(const char *const);
 
+        int get_boolean(const char *const, kv_boolean_t &);
+
+        int get_int32(const char *const, kv_int32_t &);
+
+        int get_int64(const char *const, kv_int64_t &);
+
+        int get_float(const char *const, kv_float_t &);
+
+        int get_string(const char *const, kv_string_t &);
+
+        int get_array(const char *const, kv_array_t &);
+
     private:
-        int get_value(const char *const, byte **entry);
+        int get_value(const char *const, byte **ret);
 
         int put_value(const char *const, kv_type_t, byte *value, size_t len);
+
+        int put_value(byte *where, const char *, kv_type_t, byte *value, size_t len);
     } __attribute__ ((aligned (4)));
 }
 
