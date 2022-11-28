@@ -111,8 +111,8 @@ namespace nokv {
         uint16_t order;
         uint16_t version_;
         uint32_t crc_;
+        uint32_t capacity_;
         uint32_t size_;
-        size_t capacity_;
 
     public:
         byte *begin() { return (byte *) this + sizeof(Map); }
@@ -164,7 +164,7 @@ namespace nokv {
         int put_value(byte *where, const char *, kv_type_t, byte *value, size_t len);
 
         friend class KV;
-    } __attribute__ ((aligned (4)));
+    } __attribute__ ((aligned (8)));
 }
 
 #endif //NKV_IO_H

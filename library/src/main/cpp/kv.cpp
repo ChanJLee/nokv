@@ -221,7 +221,7 @@ namespace nokv {
     int Map::put_value(byte *where, const char *key, kv_type_t type, byte *value, size_t len) {
         size_t key_len = strlen(key);
         byte *begin = this->begin();
-        if (where + key_len + 1 + 1 + len >= begin + capacity_) {
+        if (where + key_len + 1 + 1 + len >= (byte*) this + capacity_) {
             return ERROR_OVERFLOW;
         }
 
