@@ -14,6 +14,8 @@ int main(int argc, char *argv[]) {
     kv->put_float("float", 3.1415926);
     kv->put_int32("int32", 123456);
     kv->put_int64("int64", 12345678912345);
+    kv->put_string("suffix", "====");
+    kv->put_string("string", "hello world2");
     std::cout << "read all, size: " << kv->size() << std::endl;
     kv->read_all([=](const char *const key, nokv::Entry *entry) {
         printf("key: %s, value: ", key);
