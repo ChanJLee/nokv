@@ -12,9 +12,9 @@ int main(int argc, char *argv[]) {
     kv->put_string("string", "hello world");
     kv->put_boolean("boolean", true);
     kv->put_float("float", 3.1415926);
-    kv->put_int32("int32", 0x12345678);
-    kv->put_int64("int64", 0x1234567878563412);
-    std::cout << "read all" << std::endl;
+    kv->put_int32("int32", 123456);
+    kv->put_int64("int64", 12345678912345);
+    std::cout << "read all, size: " << kv->size() << std::endl;
     kv->read_all([=](const char *const key, nokv::Entry *entry) {
         printf("key: %s, value: ", key);
         switch (entry->type()) {

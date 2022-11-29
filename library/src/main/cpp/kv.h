@@ -7,7 +7,6 @@
 
 #include <inttypes.h>
 #include <functional>
-#include "log.h"
 
 namespace nokv {
     typedef unsigned char byte_t;

@@ -107,20 +107,11 @@ namespace nokv {
 
         KV *kv = new KV(fd);
         if (new_file) {
-            LOGD("new");
             kv->init_buf(mem, st.st_size);
             return kv;
         }
 
-        LOGD("check crc");
-        if (check_kv(kv)) {
-            LOGD("check crc failed");
-            kv->close();
-            delete kv;
-            ::remove(file);
-            return nullptr;
-        }
-
+        LOGD("bind buf");
         if (kv->bind_buf(mem, st.st_size)) {
             kv->close();
             delete kv;

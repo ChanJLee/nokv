@@ -3,6 +3,7 @@
 //
 
 #include "kv.h"
+#include "log.h"
 #include <cstring>
 #include <zlib.h>
 
@@ -132,7 +133,7 @@ namespace nokv {
     }
 
     int Map::put_int64(const char *const key, const kv_int64_t &v) {
-        byte_t buf[4] = {0};
+        byte_t buf[8] = {0};
         memcpy(buf, &v, sizeof(buf));
         return put_value(key, TYPE_INT64, buf, sizeof(buf));
     }
