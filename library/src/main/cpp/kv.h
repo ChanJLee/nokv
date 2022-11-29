@@ -7,6 +7,7 @@
 
 #include <inttypes.h>
 #include <functional>
+#include <cstring>
 
 namespace nokv {
     typedef unsigned char byte_t;
@@ -126,7 +127,7 @@ namespace nokv {
     public:
         // 初始化一块内存
         void init(byte_t *buf, uint32_t size) {
-            memcpy(buf, &header_, sizeof(Header));
+            ::memcpy(buf, &header_, sizeof(Header));
             capacity_ = size - sizeof(Header);
             begin_ = buf + sizeof(Header);
             buf_ = buf;
@@ -134,7 +135,7 @@ namespace nokv {
 
         // 和一块内存绑定
         void bind(byte_t *buf, uint32_t size) {
-            memcpy(&header_, buf, sizeof(Header));
+            ::memcpy(&header_, buf, sizeof(Header));
             capacity_ = size - sizeof(Header);
             begin_ = buf + sizeof(Header);
             buf_ = buf;
