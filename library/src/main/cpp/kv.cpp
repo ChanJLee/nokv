@@ -12,19 +12,19 @@ namespace nokv {
         switch (entry[0]) {
             case nokv::TYPE_INT32:
             case nokv::TYPE_FLOAT:
-                return 4;
+                return 5;
             case nokv::TYPE_BOOLEAN:
-                return 1;
+                return 2;
             case nokv::TYPE_INT64:
-                return 8;
+                return 9;
             case nokv::TYPE_STRING:
-                return strlen((char *) entry + 1) + 1;
+                return strlen((char *) entry + 1) + 2;
             case nokv::TYPE_NULL:
-                return 0;
+                return 1;
             case nokv::TYPE_ARRAY: {
                 int32_t size = 0;
                 memcpy(&size, entry + 1, sizeof(size));
-                return size;
+                return size + 1;
             }
         }
 
@@ -158,7 +158,7 @@ namespace nokv {
             }
             header_.size_ = header_.size_ + len + 1 /* type */ + strlen(key) + 1;
             header_.crc_ = crc32(0, begin, header_.size_);
-            memcpy(buf_, &header_, sizeof(header_));
+            memcpy(buf_, &header_, sizeof(Header));
             return 0;
         }
 
@@ -170,12 +170,10 @@ namespace nokv {
         }
 
         if (prev_size == len + 1) {
-            int code = put_value(write_ptr - strlen(key) - 1, key, type, value, len);
-            if (code != 0) {
-                return code;
-            }
+            write_ptr[0] = type;
+            memcpy(write_ptr + 1, value, len);
             header_.crc_ = crc32(0, begin, header_.size_);
-            memcpy(buf_, &header_, sizeof(header_));
+            memcpy(buf_, &header_, sizeof(Header));
             return 0;
         }
 
@@ -191,7 +189,7 @@ namespace nokv {
         }
         header_.size_ = header_.size_ - prev_size + len + 1;
         header_.crc_ = crc32(0, begin, header_.size_);
-        memcpy(buf_, &header_, sizeof(header_));
+        memcpy(buf_, &header_, sizeof(Header));
         return 0;
     }
 
