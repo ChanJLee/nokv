@@ -432,13 +432,20 @@ namespace nokv {
     }
 
     int Map::remove(const char *const key) {
+        if (header_.size_ == 0) {
+            return 0;
+        }
+
         return read_all(
                 [&](const char *entry_key, size_t key_len, byte_t *body, size_t body_len) -> int {
                     if (strcmp(key, entry_key) != 0) {
                         return 0;
                     }
 
-                    memcpy((void *) entry_key, body + body_len, key_len + body_len);
+                    size_t count = key_len + body_len;
+                    memcpy((void *) entry_key, body + body_len, count);
+                    header_.size_ -= count;
+                    header_.crc_ = crc32(0, begin(), header_.size_);
                     return 1;
                 });
     }
@@ -467,6 +474,12 @@ namespace nokv {
 
             begin = data + entry_size;
         }
+        return 0;
+    }
+
+    int Map::remove_all() {
+        header_.crc_ = 0;
+        header_.size_ = 0;
         return 0;
     }
 

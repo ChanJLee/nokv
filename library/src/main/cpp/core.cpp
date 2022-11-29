@@ -142,8 +142,7 @@ namespace nokv {
     }
 
     int KV::remove_all() {
-        // todo
-        return 0;
+        return map_.remove_all();
     }
 
     int KV::remove(const char *const key) {

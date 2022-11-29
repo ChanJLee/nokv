@@ -192,6 +192,8 @@ namespace nokv {
 
         int remove(const char *const key);
 
+        int remove_all();
+
     private:
         int get_value(const char *const, byte_t **ret);
 
