@@ -9,8 +9,8 @@
 #include <functional>
 
 namespace nokv {
-    typedef unsigned char byte;
-    typedef byte kv_type_t;
+    typedef unsigned char byte_t;
+    typedef byte_t kv_type_t;
     const int TYPE_INT32 = 'I';
     const int TYPE_FLOAT = 'F';
     const int TYPE_INT64 = 'L';
@@ -38,11 +38,11 @@ namespace nokv {
 
     struct kv_array_t {
         size_t capacity_;
-        byte *end_;
+        byte_t *end_;
         /* 1u + 4u + elements */
-        byte *begin_;
+        byte_t *begin_;
 
-        static int from_stream(byte *stream, kv_array_t *array);
+        static int from_stream(byte_t *stream, kv_array_t *array);
 
         static int create(kv_array_t &array);
 
@@ -53,11 +53,11 @@ namespace nokv {
         int put_null();
 
         class iterator {
-            byte *begin_;
-            byte *end_;
-            byte *it_;
+            byte_t *begin_;
+            byte_t *end_;
+            byte_t *it_;
 
-            iterator(byte *begin, byte *end) : begin_(begin), end_(end), it_(begin) {};
+            iterator(byte_t *begin, byte_t *end) : begin_(begin), end_(end), it_(begin) {};
         public:
             bool next(Entry *entry);
 
@@ -82,6 +82,7 @@ namespace nokv {
         } data_;
 
         friend class Map;
+
     public:
         Entry() : type_(TYPE_NULL) {}
 
@@ -97,33 +98,63 @@ namespace nokv {
 
         kv_int64_t as_int64() { return data_.int64_; }
 
-        const kv_string_t& as_string() { return data_.string_; }
+        const kv_string_t &as_string() { return data_.string_; }
 
         const kv_array_t &as_array() { return data_.array_; }
 
-        static int from_stream(byte *stream, Entry *entry);
+        static int from_stream(byte_t *stream, Entry *entry);
 
-        static int get_entry_size(byte *entry);
+        static int get_entry_size(byte_t *entry);
+    };
+
+    struct Header {
+        char magic_[4] = {'n', 'o', 'k', 'v'};
+        uint16_t order_ = 0x1234;
+        uint16_t version_ = 0x0100;
+        uint32_t crc_ = 0;
+        uint32_t size_ = 0;
     };
 
     class Map {
-        char magic_[4];
-        uint16_t order;
-        uint16_t version_;
-        uint32_t crc_;
+        Header header_;
         uint32_t capacity_;
-        uint32_t size_;
-
+        byte_t *begin_;
+        byte_t *buf_;
     public:
-        byte *begin() { return (byte *) this + sizeof(Map); }
+        // 初始化一块内存
+        void init(byte_t *buf, uint32_t size) {
+            memcpy(buf, &header_, sizeof(header_));
+            capacity_ = size - sizeof(header_);
+            begin_ = buf + sizeof(header_);
+            buf_ = buf;
+        }
 
-        byte *end() { return begin() + size_; }
+        // 和一块内存绑定
+        void bind(byte_t *buf, uint32_t size) {
+            memcpy(&header_, buf, sizeof(header_));
+            capacity_ = size - sizeof(header_);
+            begin_ = buf + sizeof(header_);
+            buf_ = buf;
+        }
 
-        uint32_t size() const { return size_; }
+        // 迁移到另外一块内存
+        void migrate(byte_t *buf, uint32_t size) {
+            memcpy(buf, &header_, sizeof(header_));
+            capacity_ = size - sizeof(header_);
+            byte_t *begin = buf + sizeof(header_);
+            memcpy(begin, begin_, header_.size_);
+            buf_ = buf;
+        }
+
+        byte_t *begin() { return begin_; }
+
+        byte_t *end() { return begin_ + header_.size_; }
+
+        uint32_t size() const { return header_.size_; }
 
         uint32_t capacity() const { return capacity_; }
 
-        uint32_t crc() const { return crc_; }
+        uint32_t crc() const { return header_.crc_; }
 
         int put_boolean(const char *const, const kv_boolean_t &);
 
@@ -157,13 +188,11 @@ namespace nokv {
                 const std::function<void(const char *const, Entry *entry)> &fnc);
 
     private:
-        int get_value(const char *const, byte **ret);
+        int get_value(const char *const, byte_t **ret);
 
-        int put_value(const char *const, kv_type_t, byte *value, size_t len);
+        int put_value(const char *const, kv_type_t, byte_t *value, size_t len);
 
-        int put_value(byte *where, const char *, kv_type_t, byte *value, size_t len);
-
-        friend class KV;
+        int put_value(byte_t *where, const char *, kv_type_t, byte_t *value, size_t len);
     } __attribute__ ((aligned (8)));
 }
 

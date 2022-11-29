@@ -8,7 +8,7 @@
 
 namespace nokv {
 
-    int nokv::Entry::get_entry_size(nokv::byte *entry) {
+    int nokv::Entry::get_entry_size(nokv::byte_t *entry) {
         switch (entry[0]) {
             case nokv::TYPE_INT32:
             case nokv::TYPE_FLOAT:
@@ -31,7 +31,7 @@ namespace nokv {
         return -1;
     }
 
-    int nokv::Entry::from_stream(nokv::byte *stream, nokv::Entry *entry) {
+    int nokv::Entry::from_stream(nokv::byte_t *stream, nokv::Entry *entry) {
         entry->type_ = stream[0];
         if (entry->type_ == TYPE_NULL) {
             return 0;
@@ -55,7 +55,7 @@ namespace nokv {
         return 0;
     }
 
-    int nokv::kv_array_t::from_stream(nokv::byte *stream, nokv::kv_array_t *array) {
+    int nokv::kv_array_t::from_stream(nokv::byte_t *stream, nokv::kv_array_t *array) {
         array->begin_ = stream + 1;
         memcpy(&array->capacity_, array->begin_, 4);
         array->end_ = array->begin_ + array->capacity_;
@@ -64,7 +64,7 @@ namespace nokv {
 
     int kv_array_t::create(kv_array_t &array) {
         array.capacity_ = 1024;
-        array.begin_ = new byte[array.capacity_];
+        array.begin_ = new byte_t[array.capacity_];
         array.begin_[0] = TYPE_ARRAY;
         array.end_ = array.begin_ + 5 /* 1u(type) + 4u(len) */;
         return 0;
@@ -97,7 +97,7 @@ namespace nokv {
 
     void kv_array_t::resize() {
         size_t new_size = capacity_ * 2;
-        byte *buf = new byte[new_size];
+        byte_t *buf = new byte_t[new_size];
 
         size_t size = end_ - begin_;
         memcpy(buf, begin_, size);
@@ -114,11 +114,11 @@ namespace nokv {
     }
 
     int Map::put_string(const char *const key, const kv_string_t &str) {
-        return put_value(key, TYPE_STRING, (byte *) str.str_, strlen(str.str_) + 1);
+        return put_value(key, TYPE_STRING, (byte_t *) str.str_, strlen(str.str_) + 1);
     }
 
     int Map::put_boolean(const char *const key, const kv_boolean_t &v) {
-        return put_value(key, TYPE_BOOLEAN, (byte *) &v, 1);
+        return put_value(key, TYPE_BOOLEAN, (byte_t *) &v, 1);
     }
 
     int Map::put_null(const char *const key) {
@@ -126,28 +126,28 @@ namespace nokv {
     }
 
     int Map::put_int32(const char *const key, const kv_int32_t &v) {
-        byte buf[4] = {0};
+        byte_t buf[4] = {0};
         memcpy(buf, &v, sizeof(buf));
         return put_value(key, TYPE_INT32, buf, sizeof(buf));
     }
 
     int Map::put_int64(const char *const key, const kv_int64_t &v) {
-        byte buf[4] = {0};
+        byte_t buf[4] = {0};
         memcpy(buf, &v, sizeof(buf));
         return put_value(key, TYPE_INT64, buf, sizeof(buf));
     }
 
     int Map::put_float(const char *const key, const kv_float_t &v) {
-        byte buf[4] = {0};
+        byte_t buf[4] = {0};
         memcpy(buf, &v, sizeof(buf));
         return put_value(key, TYPE_FLOAT, buf, sizeof(buf));
     }
 
-    int Map::put_value(const char *const key, kv_type_t type, byte *value, size_t len) {
-        byte *begin = this->begin();
-        byte *end = this->end();
+    int Map::put_value(const char *const key, kv_type_t type, byte_t *value, size_t len) {
+        byte_t *begin = this->begin();
+        byte_t *end = this->end();
 
-        byte *write_ptr = nullptr;
+        byte_t *write_ptr = nullptr;
         get_value(key, &write_ptr);
 
         // 新值
@@ -156,8 +156,9 @@ namespace nokv {
             if (code != 0) {
                 return code;
             }
-            size_ = size_ + len + 1 /* type */ + strlen(key) + 1;
-            crc_ = crc32(0, begin, size_);
+            header_.size_ = header_.size_ + len + 1 /* type */ + strlen(key) + 1;
+            header_.crc_ = crc32(0, begin, header_.size_);
+            memcpy(buf_, &header_, sizeof(header_));
             return 0;
         }
 
@@ -173,7 +174,8 @@ namespace nokv {
             if (code != 0) {
                 return code;
             }
-            crc_ = crc32(0, begin, size_);
+            header_.crc_ = crc32(0, begin, header_.size_);
+            memcpy(buf_, &header_, sizeof(header_));
             return 0;
         }
 
@@ -187,19 +189,20 @@ namespace nokv {
         if (code != 0) {
             return code;
         }
-        size_ = size_ - prev_size + len + 1;
-        crc_ = crc32(0, begin, size_);
+        header_.size_ = header_.size_ - prev_size + len + 1;
+        header_.crc_ = crc32(0, begin, header_.size_);
+        memcpy(buf_, &header_, sizeof(header_));
         return 0;
     }
 
-    int Map::get_value(const char *const key, byte **ret) {
-        byte *begin = this->begin();
-        byte *end = this->end();
+    int Map::get_value(const char *const key, byte_t **ret) {
+        byte_t *begin = this->begin();
+        byte_t *end = this->end();
 
         while (begin < end) {
             char *entry_key = reinterpret_cast<char *>(begin);
             size_t key_len = strlen(entry_key);
-            byte *data = begin + key_len + 1;
+            byte_t *data = begin + key_len + 1;
             if (strcmp(entry_key, key) == 0) {
                 *ret = data;
                 return 0;
@@ -218,10 +221,9 @@ namespace nokv {
         return ERROR_NOT_FOUND;
     }
 
-    int Map::put_value(byte *where, const char *key, kv_type_t type, byte *value, size_t len) {
+    int Map::put_value(byte_t *where, const char *key, kv_type_t type, byte_t *value, size_t len) {
         size_t key_len = strlen(key);
-        byte *begin = this->begin();
-        if (where + key_len + 1 + 1 + len >= (byte*) this + capacity_) {
+        if (where + key_len + 1 + 1 + len >= begin_ + capacity_) {
             return ERROR_OVERFLOW;
         }
 
@@ -233,7 +235,7 @@ namespace nokv {
     }
 
     int Map::get_boolean(const char *const key, kv_boolean_t &rtn) {
-        byte *ptr = nullptr;
+        byte_t *ptr = nullptr;
         int code = get_value(key, &ptr);
         if (code < 0) {
             return code;
@@ -258,7 +260,7 @@ namespace nokv {
     }
 
     int Map::get_int32(const char *const key, kv_int32_t &rtn) {
-        byte *ptr = nullptr;
+        byte_t *ptr = nullptr;
         int code = get_value(key, &ptr);
         if (code < 0) {
             return code;
@@ -290,7 +292,7 @@ namespace nokv {
     }
 
     int Map::get_int64(const char *const key, kv_int64_t &rtn) {
-        byte *ptr = nullptr;
+        byte_t *ptr = nullptr;
         int code = get_value(key, &ptr);
         if (code < 0) {
             return code;
@@ -323,7 +325,7 @@ namespace nokv {
     }
 
     int Map::get_float(const char *const key, kv_float_t &rtn) {
-        byte *ptr = nullptr;
+        byte_t *ptr = nullptr;
         int code = get_value(key, &ptr);
         if (code < 0) {
             return code;
@@ -356,7 +358,7 @@ namespace nokv {
     }
 
     int Map::get_string(const char *const key, kv_string_t &rtn) {
-        byte *ptr = nullptr;
+        byte_t *ptr = nullptr;
         int code = get_value(key, &ptr);
         if (code < 0) {
             return code;
@@ -381,7 +383,7 @@ namespace nokv {
     }
 
     int Map::get_array(const char *const key, kv_array_t &rtn) {
-        byte *ptr = nullptr;
+        byte_t *ptr = nullptr;
         int code = get_value(key, &ptr);
         if (code < 0) {
             return code;
@@ -406,7 +408,7 @@ namespace nokv {
     }
 
     bool Map::contains(const char *const key) {
-        byte *ptr = nullptr;
+        byte_t *ptr = nullptr;
         if (get_value(key, &ptr)) {
             return false;
         }
@@ -415,14 +417,14 @@ namespace nokv {
 
     int Map::read_all(
             const std::function<void(const char *const, Entry *)> &fnc) {
-        byte *begin = this->begin();
-        byte *end = this->end();
+        byte_t *begin = this->begin();
+        byte_t *end = this->end();
 
         Entry entry;
         while (begin < end) {
             char *entry_key = reinterpret_cast<char *>(begin);
             size_t key_len = strlen(entry_key);
-            byte *data = begin + key_len + 1;
+            byte_t *data = begin + key_len + 1;
             int entry_size = Entry::get_entry_size(data);
             if (entry_size < 0 || Entry::from_stream(data, &entry)) {
                 /* invalid state */

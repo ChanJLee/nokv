@@ -14,11 +14,11 @@ namespace nokv {
     class KV {
         Lock lock_;
         int fd_;
-        Map *map_;
+        Map map_;
+        byte_t *buf_;
 
-        KV(int fd, size_t capacity, void *mem) : lock_(fd), fd_(fd),
-                                map_(reinterpret_cast<Map *>(mem)) {
-            map_->capacity_ = capacity;
+        KV(int fd) : lock_(fd), fd_(fd),
+                     map_() {
         }
 
         static int check_kv(KV *kv);
@@ -34,7 +34,7 @@ namespace nokv {
 
         void close();
 
-        size_t size() const { return map_->size(); }
+        size_t size() const { return map_.size(); }
 
         int read_all(
                 const std::function<void(const char *const, Entry *)> &fnc);
@@ -78,6 +78,10 @@ namespace nokv {
         int put_string(const char *const, const char *);
 
         int put_string(const char *const, const kv_string_t &);
+
+        void init_buf(void *buf, long long int size);
+
+        int bind_buf(void *buf, long long int size);
     };
 }
 

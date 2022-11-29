@@ -18,7 +18,7 @@ namespace nokv {
 
     Lock *gLock;
 
-    static size_t get_entry_size(byte *mem) {
+    static size_t get_entry_size(byte_t *mem) {
         switch (mem[0]) {
             case TYPE_INT32:
             case TYPE_FLOAT:
@@ -35,7 +35,7 @@ namespace nokv {
     }
 
     void KV::flush() {
-        ::msync(map_, map_->capacity(), MS_SYNC);
+        ::msync(buf_, map_.capacity(), MS_SYNC);
     }
 
     void KV::close() {
@@ -47,14 +47,32 @@ namespace nokv {
             return -1;
         }
 
-        if (kv->map_->size() == 0) {
+        if (kv->map_.size() == 0) {
             return 0;
         }
 
-        byte *begin = kv->map_->begin();
-        uint32_t crc = crc32(0, begin, kv->map_->size());
-        LOGD("prev crc: 0x%x, current crc: 0x%x", kv->map_->crc(), crc);
-        return crc != kv->map_->crc();
+        byte_t *begin = kv->map_.begin();
+        uint32_t crc = crc32(0, begin, kv->map_.size());
+        LOGD("prev crc: 0x%x, current crc: 0x%x", kv->map_.crc(), crc);
+        return crc != kv->map_.crc();
+    }
+
+    void fill_zero(int fd, size_t len) {
+        if (len == 0) {
+            return;
+        }
+
+        constexpr static const size_t _buf_size = 4096;
+        byte_t buf[_buf_size];
+
+        uint64_t actual = (len + _buf_size - 1) & ~(_buf_size - 1); /* avoid overflow */
+        uint64_t size = actual / _buf_size;
+
+        uint32_t left = len;
+        for (uint64_t i = 0; i < size; ++i) {
+            ::write(fd, buf, left < _buf_size ? left : _buf_size);
+            left -= _buf_size;
+        }
     }
 
     KV *KV::create(const char *file) {
@@ -73,23 +91,11 @@ namespace nokv {
             return NULL;
         }
 
-        // avoid BUS error
         if (new_file) {
             size_t size = getpagesize();
             st.st_size = size;
-            byte *buf = (byte *) malloc(size);
-            buf[0] = 'n';
-            buf[1] = 'k';
-            buf[2] = 'v';
-            buf[3] = '\n';
-            // order
-            uint16_t magic = 0x1234;
-            memcpy(buf + 4, &magic, sizeof(magic));
-            // version
-            magic = 0x0100;
-            memcpy(buf + 4 + sizeof(magic), &magic, sizeof(magic));
-            ::write(fd, buf, size);
-            free(buf);
+            // avoid BUS error
+            fill_zero(fd, size);
             fsync(fd);
         }
 
@@ -99,19 +105,27 @@ namespace nokv {
             return nullptr;
         }
 
-#ifdef NKV_UNIT_TEST
-        ptrdiff_t ptr = reinterpret_cast<ptrdiff_t>(mem);
-        LOGD("mem align %lu, %td, %lu", ptr % sizeof(Map), ptr, sizeof(Map));
-#endif
+        KV *kv = new KV(fd);
+        if (new_file) {
+            kv->init_buf(mem, st.st_size);
+            return kv;
+        }
 
-        KV *kv = new KV(fd, st.st_size, mem);
-        if (!new_file && check_kv(kv)) {
+        if (check_kv(kv)) {
             LOGD("check crc failed");
             kv->close();
             delete kv;
             ::remove(file);
             return nullptr;
         }
+
+        if (kv->bind_buf(mem, st.st_size)) {
+            kv->close();
+            delete kv;
+            ::remove(file);
+            return nullptr;
+        }
+
         return kv;
     }
 
@@ -120,18 +134,18 @@ namespace nokv {
             return;
         }
 
-        munmap(kv->map_, kv->map_->capacity());
+        munmap(kv->buf_, kv->map_.capacity());
         kv->close();
         delete kv;
     }
 
     int
     KV::read_all(const std::function<void(const char *const, Entry *)> &fnc) {
-        return map_->read_all(fnc);
+        return map_.read_all(fnc);
     }
 
     bool KV::contains(const char *const key) {
-        return map_->contains(key);
+        return map_.contains(key);
     }
 
     int KV::remove_all() {
@@ -156,16 +170,16 @@ namespace nokv {
 
 #define DEFINE_PUT(type) \
     int KV::put_##type(const char *const key, const kv_##type##_t &v) { \
-        int code = map_->put_##type(key, v); \
+        int code = map_.put_##type(key, v); \
         if (code == 0) { \
             return 0; \
         } \
         \
         if (code == ERROR_OVERFLOW) { \
-            resize(map_->capacity() * 2); \
+            resize(map_.capacity() * 2); \
         } \
         \
-        return map_->put_##type(key, v); \
+        return map_.put_##type(key, v); \
     }
 
     DEFINE_PUT(boolean)
@@ -181,21 +195,21 @@ namespace nokv {
     DEFINE_PUT(array)
 
     int KV::put_null(const char *const key) {
-        int code = map_->put_null(key);
+        int code = map_.put_null(key);
         if (code == 0) {
             return 0;
         }
 
         if (code == ERROR_OVERFLOW) {
-            resize(map_->capacity() * 2);
+            resize(map_.capacity() * 2);
         }
 
-        return map_->put_null(key);
+        return map_.put_null(key);
     }
 
 #define DEFINE_GET(type) \
     int KV::get_##type(const char *const key, kv_##type##_t &ret) { \
-        return map_->get_##type(key, ret); \
+        return map_.get_##type(key, ret); \
     }
 
     DEFINE_GET(boolean)
@@ -219,5 +233,14 @@ namespace nokv {
                 .str_ = str
         };
         return put_string(key, s);
+    }
+
+    void KV::init_buf(void *buf, long long int size) {
+        map_.init(buf_, size);
+    }
+
+    int KV::bind_buf(void *buf, long long int size) {
+        map_.bind(buf_, size);
+        return check_kv(this);
     }
 }
