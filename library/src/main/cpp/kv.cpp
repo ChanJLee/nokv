@@ -67,7 +67,7 @@ namespace nokv {
         array.capacity_ = 1024;
         array.begin_ = new byte_t[array.capacity_];
         array.begin_[0] = TYPE_ARRAY;
-        array.end_ = array.begin_ + 5 /* 1u(type) + 4u(len) */;
+        array.end_ = array.begin_ + 4 /* 4u(len) */;
         return 0;
     }
 
@@ -78,12 +78,14 @@ namespace nokv {
 
     int kv_array_t::put_string(const kv_string_t &str) {
         size_t str_len = strlen(str.str_) + 1;
-        if (end_ + str_len > begin_ + capacity_) {
+        if (end_ + str_len + 1/* tag */> begin_ + capacity_) {
             resize();
         }
         end_[0] = TYPE_STRING;
-        memcpy(end_ + 1, str.str_, str_len);
-        end_ = begin_ + str_len + 1;
+        memcpy(++end_, str.str_, str_len);
+        end_ += str_len;
+        uint32_t size = end_ - begin_;
+        memcpy(begin_, &size, 4);
         return 0;
     }
 
@@ -92,13 +94,15 @@ namespace nokv {
             resize();
         }
         end_[0] = TYPE_NULL;
-        end_ = begin_ + 1;
+        end_ = end_ + 1;
+        uint32_t size = end_ - begin_;
+        memcpy(begin_, &size, 4);
         return 0;
     }
 
     void kv_array_t::resize() {
         size_t new_size = capacity_ * 2;
-        byte_t *buf = new byte_t[new_size];
+        auto *buf = new byte_t[new_size];
 
         size_t size = end_ - begin_;
         memcpy(buf, begin_, size);
@@ -108,6 +112,13 @@ namespace nokv {
         begin_ = buf;
         end_ = begin_ + size;
         capacity_ = new_size;
+    }
+
+    int kv_array_t::put_string(const char *str) {
+        kv_string_t string = {
+                .str_ = str
+        };
+        return put_string(string);
     }
 
     int nokv::Map::put_array(const char *const key, const nokv::kv_array_t &array) {

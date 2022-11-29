@@ -16,6 +16,18 @@ int main(int argc, char *argv[]) {
     kv->put_int64("int64", 12345678912345);
     kv->put_string("suffix", "====");
     kv->put_string("string", "hello world2");
+
+    nokv::kv_array_t array;
+    nokv::kv_array_t::create(array);
+
+    array.put_string("a1");
+    array.put_string("a2");
+    array.put_null();
+    array.put_string("a3");
+
+    kv->put_array("array", array);
+    kv->put_string("suffix2", "====");
+
     std::cout << "read all, size: " << kv->size() << std::endl;
     kv->read_all([=](const char *const key, nokv::Entry *entry) {
         printf("key: %s, value: ", key);

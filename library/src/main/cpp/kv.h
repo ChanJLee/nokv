@@ -50,6 +50,8 @@ namespace nokv {
 
         int put_string(const kv_string_t &);
 
+        int put_string(const char*);
+
         int put_null();
 
         class iterator {
