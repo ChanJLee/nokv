@@ -47,8 +47,7 @@ public class NoKV implements SharedPreferences {
 
 	@Override
 	public Map<String, ?> getAll() {
-		// todo
-		return null;
+		return nativeGetAll(mPtr);
 	}
 
 	@Nullable
@@ -126,4 +125,6 @@ public class NoKV implements SharedPreferences {
 	private static native String nativeGetString(long ptr, String key, String defValue);
 
 	private static native boolean nativeContains(long ptr, String key);
+
+	private static native Map<String, ?> nativeGetAll(long ptr);
 }

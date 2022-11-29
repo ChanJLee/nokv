@@ -212,3 +212,36 @@ Java_me_chan_nkv_NoKvEditor_nativePutBoolean(JNIEnv *env, jclass clazz, jlong pt
 
     return kv->put_boolean(k, value) == 0;
 }
+
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_me_chan_nkv_NoKV_nativeGetAll(JNIEnv *env, jclass clazz, jlong ptr) {
+    auto kv = (nokv::KV *) ptr;
+
+    jclass map_clazz = env->FindClass("java/util/HashMap");
+    jmethodID ctor = env->GetMethodID(map_clazz, "<init>", "()V");
+    jmethodID put_method = env->GetMethodID(map_clazz, "put",
+                                            "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+    jobject map = env->NewObject(map_clazz, ctor);
+
+    nokv::ScopedLock<nokv::KV> lock(*kv);
+    kv->read_all([&](const char *const key, nokv::Entry *entry) {
+        nokv::kv_type_t type = entry->type();
+        if (type == nokv::TYPE_NULL) {
+            env->CallObjectMethod(map, put_method, env->NewStringUTF(key), nullptr);
+        } else if (type == nokv::TYPE_INT32) {
+            env->CallObjectMethod(map, put_method, env->NewStringUTF(key),);
+        } else if (type == nokv::TYPE_FLOAT) {
+            env->CallObjectMethod(map, put_method, env->NewStringUTF(key),);
+        } else if (type == nokv::TYPE_INT64) {
+            env->CallObjectMethod(map, put_method, env->NewStringUTF(key),);
+        } else if (type == nokv::TYPE_BOOLEAN) {
+            env->CallObjectMethod(map, put_method, env->NewStringUTF(key),);
+        } else if (type == nokv::TYPE_STRING) {
+            env->CallObjectMethod(map, put_method, env->NewStringUTF(key),);
+        } else if (type == nokv::TYPE_ARRAY) {
+            env->CallObjectMethod(map, put_method, env->NewStringUTF(key),);
+        }
+    });
+    return map;
+}

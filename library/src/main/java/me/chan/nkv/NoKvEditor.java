@@ -22,7 +22,6 @@ class NoKvEditor implements SharedPreferences.Editor {
 		mPtr = ptr;
 	}
 
-	// todo support null
 	@Override
 	public SharedPreferences.Editor putString(String key, @Nullable String value) {
 		mModify.put(key, value);
