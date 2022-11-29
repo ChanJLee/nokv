@@ -166,11 +166,7 @@ Java_me_chan_nkv_NoKvEditor_nativePutStringSet(JNIEnv *env, jclass clazz, jlong 
         return false;
     }
 
-    int code = -1;
-    {
-        nokv::ScopedLock<nokv::KV> lock(*kv);
-        code = kv->put_array(k, array);
-    }
+    int code = kv->put_array(k, array);
     nokv::kv_array_t::free(array);
 
     // TODO: implement nativePutStringSet()
@@ -184,7 +180,6 @@ Java_me_chan_nkv_NoKvEditor_nativePutInteger(JNIEnv *env, jclass clazz, jlong pt
     auto kv = (nokv::KV *) ptr;
     DEF_C_STR(env, key, k);
 
-    nokv::ScopedLock<nokv::KV> lock(*kv);
     return kv->put_int32(k, value) == 0;
 }
 
@@ -195,7 +190,6 @@ Java_me_chan_nkv_NoKvEditor_nativePutLong(JNIEnv *env, jclass clazz, jlong ptr, 
     auto kv = (nokv::KV *) ptr;
     DEF_C_STR(env, key, k);
 
-    nokv::ScopedLock<nokv::KV> lock(*kv);
     return kv->put_int64(k, value) == 0;
 }
 
@@ -206,7 +200,6 @@ Java_me_chan_nkv_NoKvEditor_nativePutFloat(JNIEnv *env, jclass clazz, jlong ptr,
     auto kv = (nokv::KV *) ptr;
     DEF_C_STR(env, key, k);
 
-    nokv::ScopedLock<nokv::KV> lock(*kv);
     return kv->put_float(k, value) == 0;
 }
 
@@ -217,6 +210,5 @@ Java_me_chan_nkv_NoKvEditor_nativePutBoolean(JNIEnv *env, jclass clazz, jlong pt
     auto kv = (nokv::KV *) ptr;
     DEF_C_STR(env, key, k);
 
-    nokv::ScopedLock<nokv::KV> lock(*kv);
     return kv->put_boolean(k, value) == 0;
 }
