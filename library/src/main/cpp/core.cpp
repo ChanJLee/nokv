@@ -147,8 +147,7 @@ namespace nokv {
     }
 
     int KV::remove(const char *const key) {
-        // todo
-        return 0;
+        return map_.remove(key);
     }
 
     int KV::init(const char *meta_file) {

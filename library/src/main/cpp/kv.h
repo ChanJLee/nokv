@@ -19,6 +19,7 @@ namespace nokv {
     const int TYPE_ARRAY = 'A';
     const int TYPE_NULL = 'N';
 
+    /* 必须是负值 */
     const int ERROR_OVERFLOW = -1;
     const int ERROR_NOT_FOUND = -2;
     const int ERROR_TYPE_ERROR = -3;
@@ -50,7 +51,7 @@ namespace nokv {
 
         int put_string(const kv_string_t &);
 
-        int put_string(const char*);
+        int put_string(const char *);
 
         int put_null();
 
@@ -189,12 +190,17 @@ namespace nokv {
         int read_all(
                 const std::function<void(const char *const, Entry *entry)> &fnc);
 
+        int remove(const char *const key);
+
     private:
         int get_value(const char *const, byte_t **ret);
 
         int put_value(const char *const, kv_type_t, byte_t *value, size_t len);
 
         int put_value(byte_t *where, const char *, kv_type_t, byte_t *value, size_t len);
+
+        int read_all(
+                const std::function<int(const char *, size_t, byte_t *, size_t)> &fnc);
     };
 }
 

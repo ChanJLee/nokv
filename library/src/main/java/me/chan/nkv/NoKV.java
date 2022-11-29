@@ -47,6 +47,7 @@ public class NoKV implements SharedPreferences {
 
 	@Override
 	public Map<String, ?> getAll() {
+		// todo
 		return null;
 	}
 
@@ -104,8 +105,8 @@ public class NoKV implements SharedPreferences {
 
 	@Override
 	protected void finalize() throws Throwable {
-		super.finalize();
 		nativeRelease(mPtr);
+		super.finalize();
 	}
 
 	private static native long nativeCreate(String kv);

@@ -206,29 +206,21 @@ namespace nokv {
     }
 
     int Map::get_value(const char *const key, byte_t **ret) {
-        byte_t *begin = this->begin();
-        byte_t *end = this->end();
+        int code = ERROR_NOT_FOUND;
+        read_all(
+                [&](const char *entry_key, size_t key_len, byte_t *body, size_t body_len) -> int {
+                    if (strcmp(key, entry_key) != 0) {
+                        return 0;
+                    }
 
-        while (begin < end) {
-            char *entry_key = reinterpret_cast<char *>(begin);
-            size_t key_len = strlen(entry_key);
-            byte_t *data = begin + key_len + 1;
-            if (strcmp(entry_key, key) == 0) {
-                *ret = data;
-                return 0;
-            }
-
-            int entry_size = Entry::get_entry_size(data);
-            if (entry_size < 0) {
-                /* invalid state */
-                return ERROR_INVALID_STATE;
-            }
-
-            begin = data + entry_size;
-        }
+                    *ret = body;
+                    code = 0;
+                    return 1;
+                }
+        );
 
         /* not found */
-        return ERROR_NOT_FOUND;
+        return code;
     }
 
     int Map::put_value(byte_t *where, const char *key, kv_type_t type, byte_t *value, size_t len) {
@@ -427,21 +419,51 @@ namespace nokv {
 
     int Map::read_all(
             const std::function<void(const char *const, Entry *)> &fnc) {
+        Entry entry;
+        return read_all([&](const char *key, size_t key_len, byte_t *body, size_t body_len) -> int {
+            if (Entry::from_stream(body, &entry)) {
+                /* invalid state */
+                return ERROR_INVALID_STATE;
+            }
+
+            fnc(key, &entry);
+            return 0;
+        });
+    }
+
+    int Map::remove(const char *const key) {
+        return read_all(
+                [&](const char *entry_key, size_t key_len, byte_t *body, size_t body_len) -> int {
+                    if (strcmp(key, entry_key) != 0) {
+                        return 0;
+                    }
+
+                    memcpy((void *) entry_key, body + body_len, key_len + body_len);
+                    return 1;
+                });
+    }
+
+    int Map::read_all(
+            const std::function<int(const char *, size_t, byte_t *, size_t)> &fnc) {
         byte_t *begin = this->begin();
         byte_t *end = this->end();
 
-        Entry entry;
         while (begin < end) {
             char *entry_key = reinterpret_cast<char *>(begin);
             size_t key_len = strlen(entry_key);
             byte_t *data = begin + key_len + 1;
             int entry_size = Entry::get_entry_size(data);
-            if (entry_size < 0 || Entry::from_stream(data, &entry)) {
+            if (entry_size < 0) {
                 /* invalid state */
                 return ERROR_INVALID_STATE;
             }
 
-            fnc((const char *const) begin, &entry);
+            int code = fnc((const char *) begin, key_len + 1, data, entry_size);
+            if (code > 0) {
+                return 0;
+            } else if (code < 0) {
+                return code;
+            }
 
             begin = data + entry_size;
         }
