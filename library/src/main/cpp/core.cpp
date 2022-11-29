@@ -63,7 +63,7 @@ namespace nokv {
         }
 
         constexpr static const size_t _buf_size = 4096;
-        byte_t buf[_buf_size];
+        byte_t buf[_buf_size] = {0};
 
         uint64_t actual = (len + _buf_size - 1) & ~(_buf_size - 1); /* avoid overflow */
         uint64_t size = actual / _buf_size;

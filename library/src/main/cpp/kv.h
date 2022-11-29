@@ -7,6 +7,7 @@
 
 #include <inttypes.h>
 #include <functional>
+#include "log.h"
 
 namespace nokv {
     typedef unsigned char byte_t;
@@ -113,7 +114,7 @@ namespace nokv {
         uint16_t version_ = 0x0100;
         uint32_t crc_ = 0;
         uint32_t size_ = 0;
-    };
+    } __attribute__ ((aligned (4)));
 
     class Map {
         Header header_;
@@ -123,25 +124,25 @@ namespace nokv {
     public:
         // 初始化一块内存
         void init(byte_t *buf, uint32_t size) {
-            memcpy(buf, &header_, sizeof(header_));
-            capacity_ = size - sizeof(header_);
-            begin_ = buf + sizeof(header_);
+            memcpy(buf, &header_, sizeof(Header));
+            capacity_ = size - sizeof(Header);
+            begin_ = buf + sizeof(Header);
             buf_ = buf;
         }
 
         // 和一块内存绑定
         void bind(byte_t *buf, uint32_t size) {
-            memcpy(&header_, buf, sizeof(header_));
-            capacity_ = size - sizeof(header_);
-            begin_ = buf + sizeof(header_);
+            memcpy(&header_, buf, sizeof(Header));
+            capacity_ = size - sizeof(Header);
+            begin_ = buf + sizeof(Header);
             buf_ = buf;
         }
 
         // 迁移到另外一块内存
         void migrate(byte_t *buf, uint32_t size) {
-            memcpy(buf, &header_, sizeof(header_));
-            capacity_ = size - sizeof(header_);
-            byte_t *begin = buf + sizeof(header_);
+            memcpy(buf, &header_, sizeof(Header));
+            capacity_ = size - sizeof(Header);
+            byte_t *begin = buf + sizeof(Header);
             memcpy(begin, begin_, header_.size_);
             buf_ = buf;
         }
@@ -193,7 +194,7 @@ namespace nokv {
         int put_value(const char *const, kv_type_t, byte_t *value, size_t len);
 
         int put_value(byte_t *where, const char *, kv_type_t, byte_t *value, size_t len);
-    } __attribute__ ((aligned (8)));
+    };
 }
 
 #endif //NKV_IO_H
