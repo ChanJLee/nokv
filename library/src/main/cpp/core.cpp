@@ -100,17 +100,19 @@ namespace nokv {
         }
 
         void *mem = mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-        if (mem == MAP_FAILED) {
+        if (mem == MAP_FAILED || mem == nullptr) {
             LOGI("mmap %s failed", file);
             return nullptr;
         }
 
         KV *kv = new KV(fd);
         if (new_file) {
+            LOGD("new");
             kv->init_buf(mem, st.st_size);
             return kv;
         }
 
+        LOGD("check crc");
         if (check_kv(kv)) {
             LOGD("check crc failed");
             kv->close();
@@ -235,11 +237,13 @@ namespace nokv {
         return put_string(key, s);
     }
 
-    void KV::init_buf(void *buf, long long int size) {
+    void KV::init_buf(void *buf, size_t size) {
+        buf_ = static_cast<byte_t *>(buf);
         map_.init(buf_, size);
     }
 
-    int KV::bind_buf(void *buf, long long int size) {
+    int KV::bind_buf(void *buf, size_t size) {
+        buf_ = static_cast<byte_t *>(buf);
         map_.bind(buf_, size);
         return check_kv(this);
     }

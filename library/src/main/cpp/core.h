@@ -79,9 +79,9 @@ namespace nokv {
 
         int put_string(const char *const, const kv_string_t &);
 
-        void init_buf(void *buf, long long int size);
+        void init_buf(void *buf, size_t size);
 
-        int bind_buf(void *buf, long long int size);
+        int bind_buf(void *buf, size_t size);
     };
 }
 
