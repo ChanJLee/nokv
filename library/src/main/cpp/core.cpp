@@ -25,6 +25,7 @@ namespace nokv {
     }
 
     void KV::close() {
+        munmap(buf_, map_.capacity());
         ::close(fd_);
     }
 
@@ -250,8 +251,9 @@ namespace nokv {
 
     DEFINE_GET(array)
 
-    void KV::resize(size_t size) {
+    int KV::resize(size_t size) {
         // todo
+        return 0;
     }
 
     int KV::put_string(const char *const key, const char *str) {
@@ -270,5 +272,28 @@ namespace nokv {
         buf_ = static_cast<byte_t *>(buf);
         map_.bind(buf_, size);
         return check_kv(this);
+    }
+
+    bool KV::reload_if() {
+        int seq = meta_->seq();
+        if (seq == seq_) {
+            return true;
+        }
+
+        struct stat st = {0};
+        if (fstat(fd_, &st)) {
+            return false;
+        }
+
+        void *mem = mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, 0);
+        if (mem == MAP_FAILED || mem == nullptr) {
+            return false;
+        }
+
+        munmap(buf_, map_.capacity());
+        buf_ = static_cast<byte_t *>(mem);
+        map_.bind(buf_, st.st_size);
+        seq_ = seq;
+        return true;
     }
 }

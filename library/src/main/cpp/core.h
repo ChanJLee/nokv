@@ -27,8 +27,9 @@ namespace nokv {
 
         static int check_kv(KV *kv);
 
-        void resize(size_t size);
+        int resize(size_t size);
 
+        bool reload_if();
     public:
         void lock() { lock_.lock(); }
 

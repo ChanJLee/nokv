@@ -141,15 +141,6 @@ namespace nokv {
             buf_ = buf;
         }
 
-        // 迁移到另外一块内存
-        void migrate(byte_t *buf, uint32_t size) {
-            memcpy(buf, &header_, sizeof(Header));
-            capacity_ = size - sizeof(Header);
-            byte_t *begin = buf + sizeof(Header);
-            memcpy(begin, begin_, header_.size_);
-            buf_ = buf;
-        }
-
         byte_t *begin() { return begin_; }
 
         byte_t *end() { return begin_ + header_.size_; }
