@@ -20,19 +20,18 @@ public class NoKV implements SharedPreferences {
 
 	@SuppressLint("StaticFieldLeak")
 	private static Context sContext;
-	private static File sWorkspace;
 
 	public static Context init(Context baseContext) {
 		sContext = baseContext;
-		sWorkspace = baseContext.getDir("nokv", Context.MODE_PRIVATE);
-		if (nativeInit(sWorkspace.toString()) != 0) {
+		File ws = baseContext.getDir("nokv", Context.MODE_PRIVATE);
+		if (nativeInit(ws.getAbsolutePath()) != 0) {
 			return baseContext;
 		}
 		return new ProxyContext(baseContext);
 	}
 
 	public static SharedPreferences create(String name, int mode) {
-		long ptr = nativeCreate(new File(sWorkspace, "/kv/" + name).getAbsolutePath());
+		long ptr = nativeCreate(name);
 		if (ptr == 0) {
 			return sContext.getSharedPreferences(name, mode);
 		}
