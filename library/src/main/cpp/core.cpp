@@ -275,7 +275,7 @@ namespace nokv {
     }
 
     bool KV::reload_if() {
-        int seq = meta_->seq();
+        uint32_t seq = meta_->seq();
         if (seq == seq_) {
             return true;
         }
