@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
         PUSH_MOCK_DATA("key_boolean_%d", boolean, true, 4);
         {
             char key[24] = {0};
-            sscanf(key, "key_string_%d", i);
+            sscanf(key, "key_string_%d", &i);
             MockData data(key);
             data.type_ = 5;
             data.data_.string_.str_ = new char[24];

@@ -70,7 +70,11 @@ namespace nokv {
         ScopedLock<nokv::Lock> lock(*gLock);
 
         std::stringstream ss;
-        ss << gWs << "/kv/" << name << ".kv";
+        ss << gWs << "/";
+        if (name[0] == '.') {
+            ss << '_';
+        }
+        ss << name << ".kv";
         const std::string path = ss.str();
         const char *file = path.c_str();
 
@@ -161,7 +165,7 @@ namespace nokv {
 
         gWs = ws;
         std::string path = ws;
-        path += "kv.lock";
+        path += "/.kv.lock";
 
         const char *file = path.c_str();
         bool new_file = stat(file, &st) != 0;

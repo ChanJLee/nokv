@@ -6,6 +6,7 @@
 #define NKV_META_H
 
 #include <inttypes.h>
+#include <stddef.h>
 
 namespace nokv {
 
