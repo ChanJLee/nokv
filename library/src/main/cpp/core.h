@@ -7,6 +7,7 @@
 
 #include "lock.h"
 #include "kv.h"
+#include "meta.h"
 #include <cstring>
 #include <functional>
 
@@ -16,9 +17,12 @@ namespace nokv {
         int fd_;
         Map map_;
         byte_t *buf_;
+        uint32_t seq_;
+        KVMeta *meta_;
 
-        KV(int fd) : lock_(fd), fd_(fd),
-                     map_() {
+        KV(int fd, nokv::KVMeta *meta) : lock_(fd), fd_(fd),
+                                         map_(), seq_(meta->seq()),
+                                         meta_(meta) {
         }
 
         static int check_kv(KV *kv);
@@ -41,11 +45,11 @@ namespace nokv {
 
         bool contains(const char *const key);
 
-        static KV *create(const char *file);
+        static KV *create(const char *name);
 
         static void destroy(KV *kv);
 
-        static int init(const char *meta_file);
+        static int init(const char *ws);
 
         int remove_all();
 

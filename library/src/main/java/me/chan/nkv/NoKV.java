@@ -25,7 +25,7 @@ public class NoKV implements SharedPreferences {
 	public static Context init(Context baseContext) {
 		sContext = baseContext;
 		sWorkspace = baseContext.getDir("nokv", Context.MODE_PRIVATE);
-		if (nativeInit(new File(sWorkspace, "nkv_meta").toString()) != 0) {
+		if (nativeInit(sWorkspace.toString()) != 0) {
 			return baseContext;
 		}
 		return new ProxyContext(baseContext);
@@ -110,7 +110,7 @@ public class NoKV implements SharedPreferences {
 
 	private static native long nativeCreate(String kv);
 
-	private static native int nativeInit(String metaFile);
+	private static native int nativeInit(String ws);
 
 	private static native void nativeRelease(long ptr);
 

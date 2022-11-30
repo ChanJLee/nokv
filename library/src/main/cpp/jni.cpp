@@ -12,8 +12,8 @@ Java_me_chan_nkv_NoKV_nativeCreate(JNIEnv *env, jclass clazz, jstring kv) {
 
 extern "C"
 JNIEXPORT jint JNICALL
-Java_me_chan_nkv_NoKV_nativeInit(JNIEnv *env, jclass clazz, jstring metaFile) {
-    DEF_C_STR(env, metaFile, meta);
+Java_me_chan_nkv_NoKV_nativeInit(JNIEnv *env, jclass clazz, jstring ws) {
+    DEF_C_STR(env, ws, meta);
     return nokv::KV::init(meta);
 }
 

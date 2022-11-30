@@ -13,25 +13,29 @@
 #include "log.h"
 #include <zlib.h>
 #include <stddef.h>
+#include "meta.h"
+#include <map>
+#include <sstream>
 
 namespace nokv {
 
     Lock *gLock;
+    std::string gWs;
+    std::map<const char *, KVMeta *> gMetaTable;
 
-    static size_t get_entry_size(byte_t *mem) {
-        switch (mem[0]) {
-            case TYPE_INT32:
-            case TYPE_FLOAT:
-                return 5;
-            case TYPE_BOOLEAN:
-                return 2;
-            case TYPE_INT64:
-                return 9;
-            case TYPE_STRING:
-                return strlen((char *) mem + 1) + 2;
+    KVMeta *get_meta(const char *name) {
+        const auto &it = gMetaTable.find(name);
+        if (it != gMetaTable.end()) {
+            return it->second;
         }
 
-        return 0;
+        std::stringstream ss;
+        ss << gWs << "/meta/" << name << ".meta";
+        const std::string path = ss.str();
+        const char *file = path.c_str();
+        KVMeta *meta = KVMeta::create(file);
+        gMetaTable[name] = meta;
+        return meta;
     }
 
     void KV::flush() {
@@ -75,7 +79,7 @@ namespace nokv {
         }
     }
 
-    KV *KV::create(const char *file) {
+    KV *KV::create(const char *name) {
         if (gLock == nullptr) {
             LOGD("init module first!");
             return nullptr;
@@ -83,12 +87,23 @@ namespace nokv {
 
         ScopedLock<nokv::Lock> lock(*gLock);
 
+        std::stringstream ss;
+        ss << gWs << "/kv/" << name << ".kv";
+        const std::string path = ss.str();
+        const char *file = path.c_str();
+
         struct stat st{};
         bool new_file = stat(file, &st) != 0;
         int fd = open(file, O_RDWR | O_CREAT | O_CLOEXEC, S_IWUSR | S_IRUSR);
         if (fd < 0) {
             LOGI("open %s failed", file);
             return NULL;
+        }
+
+        KVMeta *meta = get_meta(name);
+        if (meta == nullptr) {
+            LOGI("open %s's meta file failed", file);
+            return nullptr;
         }
 
         if (new_file) {
@@ -105,7 +120,7 @@ namespace nokv {
             return nullptr;
         }
 
-        KV *kv = new KV(fd);
+        KV *kv = new KV(fd, meta);
         if (new_file) {
             kv->init_buf(mem, st.st_size);
             return kv;
@@ -116,6 +131,7 @@ namespace nokv {
             kv->close();
             delete kv;
             ::remove(file);
+            // todo remove meta
             return nullptr;
         }
 
@@ -142,17 +158,32 @@ namespace nokv {
     }
 
     int KV::remove_all() {
-        return map_.remove_all();
+        int code = map_.remove_all();
+        if (code != 0) {
+            return code;
+        }
+        resize(getpagesize());
+        return 0;
     }
 
     int KV::remove(const char *const key) {
         return map_.remove(key);
     }
 
-    int KV::init(const char *meta_file) {
-        int fd = open(meta_file, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR);
-        if (fd < 0) {
+    int KV::init(const char *ws) {
+        struct stat st = {0};
+        if (stat(ws, &st) != 0 && mkdir(ws, 0700) != 0) {
+            LOGD("create ws failed");
             return -1;
+        }
+
+        gWs = ws;
+        std::string path = ws;
+        path += "kv.lock";
+        int fd = open(path.c_str(), O_RDWR | O_CREAT, S_IWUSR | S_IRUSR);
+        if (fd < 0) {
+            LOGI("create global lock failed");
+            return -2;
         }
 
         gLock = new Lock(fd);
