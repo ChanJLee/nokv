@@ -14,29 +14,11 @@
 #include <zlib.h>
 #include <stddef.h>
 #include "meta.h"
-#include <map>
 #include <sstream>
 
 namespace nokv {
-
     Lock *gLock;
     std::string gWs;
-    std::map<const char *, KVMeta *> gMetaTable;
-
-    KVMeta *get_meta(const char *name) {
-        const auto &it = gMetaTable.find(name);
-        if (it != gMetaTable.end()) {
-            return it->second;
-        }
-
-        std::stringstream ss;
-        ss << gWs << "/meta/" << name << ".meta";
-        const std::string path = ss.str();
-        const char *file = path.c_str();
-        KVMeta *meta = KVMeta::create(file);
-        gMetaTable[name] = meta;
-        return meta;
-    }
 
     void KV::flush() {
         ::msync(buf_, map_.capacity(), MS_SYNC);
@@ -100,7 +82,7 @@ namespace nokv {
             return NULL;
         }
 
-        KVMeta *meta = get_meta(name);
+        KVMeta *meta = KVMeta::get(name);
         if (meta == nullptr) {
             LOGI("open %s's meta file failed", file);
             return nullptr;
@@ -180,12 +162,30 @@ namespace nokv {
         gWs = ws;
         std::string path = ws;
         path += "kv.lock";
-        int fd = open(path.c_str(), O_RDWR | O_CREAT, S_IWUSR | S_IRUSR);
+
+        const char *file = path.c_str();
+        bool new_file = stat(file, &st) != 0;
+        int fd = open(file, O_RDWR | O_CREAT | O_CLOEXEC, S_IWUSR | S_IRUSR);
         if (fd < 0) {
-            LOGI("create global lock failed");
-            return -2;
+            LOGI("open %s failed", file);
+            return -1;
         }
 
+        if (new_file) {
+            size_t size = getpagesize() * 16;
+            st.st_size = size;
+            // avoid BUS error
+            fill_zero(fd, size);
+            fsync(fd);
+        }
+
+        void *mem = mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+        if (mem == MAP_FAILED || mem == nullptr) {
+            LOGI("mmap %s failed", file);
+            return -1;
+        }
+
+        KVMeta::init(mem, st.st_size);
         gLock = new Lock(fd);
         return 0;
     }

@@ -10,10 +10,17 @@
 namespace nokv {
 
     class KVMeta {
+        void *buf_;
     public:
-        static KVMeta *create(const char *file);
+        KVMeta(void *buf) : buf_(buf) {}
 
         uint32_t seq();
+
+        uint32_t next();
+
+        static KVMeta* get(const char* name);
+
+        static void init(void* buf, size_t size);
     };
 }
 
