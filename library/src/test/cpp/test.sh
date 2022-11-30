@@ -5,4 +5,4 @@ mkdir out
 
 echo "test muti process"
 rm `pwd`/out/mp.nkv
-./muti_process `pwd`/out/meta `pwd`/out/mp.nkv
+./multi_process `pwd`/out/meta `pwd`/out/mp.nkv

@@ -13,7 +13,7 @@ struct MockData
 {
     std::string key;
     int type_;
-    union data
+    union
     {
         kv_boolean_t boolean_;
         kv_float_t float_;
@@ -26,24 +26,24 @@ struct MockData
     MockData(const char *key) : key(key) {}
 };
 
-#define PUSH_MOCK_DATA(format, type, v, tag) \
-    {                                        \
-        char key[24] = {0};                  \
-        sscanf(key, format, &i);             \
-        MockData data(key);                  \
-        data.data_.##type##_ = v;            \
-        data.type_ = tag;                    \
-        vec.push_back(data);                 \
+#define PUSH_MOCK_DATA(format, t, v, tag) \
+    {                                     \
+        char key[24] = {0};               \
+        sscanf(key, format, &i);          \
+        MockData data(key);               \
+        data.data_.t##_ = v;              \
+        data.type_ = tag;                 \
+        vec.push_back(data);              \
     }
 
-// #define INSERT_KV(type, data, tag)                                            \
-//     {                                                                   \
-//         if (vec[i].type_ == tag)                                        \
-//         {                                                               \
-//             kv->put_##type(vec[i].key.c_str(), vec[i].data_.##data); \
-//             continue;                                                   \
-//         }                                                               \
-//     }
+#define INSERT_KV(type, tag)                                          \
+    {                                                                 \
+        if (vec[i].type_ == tag)                                      \
+        {                                                             \
+            kv->put_##type(vec[i].key.c_str(), vec[i].data_.type##_); \
+            continue;                                                 \
+        }                                                             \
+    }
 
 void subprocess(char *argv[], std::vector<MockData> &vec, int start, int end)
 {
@@ -61,11 +61,11 @@ void subprocess(char *argv[], std::vector<MockData> &vec, int start, int end)
                 continue;
             }
         }
-        // INSERT_KV(int32, 1);
-        // INSERT_KV(float, 2);
-        // INSERT_KV(int64, 3);
-        // INSERT_KV(boolean, 4);
-        // INSERT_KV(string, 4);
+        INSERT_KV(int32, 1);
+        INSERT_KV(float, 2);
+        INSERT_KV(int64, 3);
+        INSERT_KV(boolean, 4);
+        INSERT_KV(string, 4);
     }
 
     std::cout << "finish write, pid: " << getpid() << std::endl;
