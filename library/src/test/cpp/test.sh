@@ -1,8 +1,8 @@
 make || exit $?
 
 mkdir out
-./main `pwd`/out demo.nkv
+./main `pwd`/out demo
 
 echo "test muti process"
-#rm `pwd`/out/kv/mp.nkv
-#./multi_process `pwd`/out mp.nkv
+rm `pwd`/out/mp.*
+./multi_process `pwd`/out mp
