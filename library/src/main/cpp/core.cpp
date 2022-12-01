@@ -30,8 +30,9 @@ namespace nokv {
     }
 
     int KV::check_kv(KV *kv) {
-        if (kv == nullptr) {
-            return -1;
+        ScopedLock<KV> lock(*kv);
+        if (!kv->reload_if()) {
+            return ERROR_MAP_FAILED;
         }
 
         if (kv->map_.size() == 0) {
@@ -137,14 +138,26 @@ namespace nokv {
 
     int
     KV::read_all(const std::function<void(const char *const, Entry *)> &fnc) {
+        if (!reload_if()) {
+            return ERROR_MAP_FAILED;
+        }
+
         return map_.read_all(fnc);
     }
 
-    bool KV::contains(const char *const key) {
-        return map_.contains(key);
+    int KV::contains(const char *const key) {
+        if (!reload_if()) {
+            return ERROR_MAP_FAILED;
+        }
+
+        return map_.contains(key) ? 0 : ERROR_NOT_FOUND;
     }
 
     int KV::remove_all() {
+        if (!reload_if()) {
+            return ERROR_MAP_FAILED;
+        }
+
         int code = map_.remove_all();
         if (code != 0) {
             return code;
@@ -154,6 +167,10 @@ namespace nokv {
     }
 
     int KV::remove(const char *const key) {
+        if (!reload_if()) {
+            return ERROR_MAP_FAILED;
+        }
+
         return map_.remove(key);
     }
 
@@ -197,6 +214,10 @@ namespace nokv {
 
 #define DEFINE_PUT(type) \
     int KV::put_##type(const char *const key, const kv_##type##_t &v) { \
+        if (!reload_if()) {  \
+            return ERROR_MAP_FAILED; \
+        } \
+        \
         int code = map_.put_##type(key, v); \
         if (code == 0) { \
             return 0; \
@@ -222,6 +243,10 @@ namespace nokv {
     DEFINE_PUT(array)
 
     int KV::put_null(const char *const key) {
+        if (!reload_if()) {
+            return ERROR_MAP_FAILED;
+        }
+
         int code = map_.put_null(key);
         if (code == 0) {
             return 0;
@@ -236,6 +261,9 @@ namespace nokv {
 
 #define DEFINE_GET(type) \
     int KV::get_##type(const char *const key, kv_##type##_t &ret) { \
+        if (!reload_if()) {                                         \
+            return ERROR_MAP_FAILED;             \
+        } \
         return map_.get_##type(key, ret); \
     }
 

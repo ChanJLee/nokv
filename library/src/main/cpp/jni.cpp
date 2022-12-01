@@ -30,7 +30,7 @@ Java_me_chan_nkv_NoKV_nativeContains(JNIEnv *env, jclass clazz, jlong ptr, jstri
     auto kv = (nokv::KV *) ptr;
     DEF_C_STR(env, key, k);
     nokv::ScopedLock<nokv::KV> lock(*kv);
-    return kv->contains(k);
+    return kv->contains(k) == 0;
 }
 
 extern "C"

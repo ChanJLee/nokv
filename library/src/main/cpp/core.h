@@ -44,7 +44,7 @@ namespace nokv {
         int read_all(
                 const std::function<void(const char *const, Entry *)> &fnc);
 
-        bool contains(const char *const key);
+        int contains(const char *const key);
 
         static KV *create(const char *name);
 

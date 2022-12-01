@@ -25,6 +25,7 @@ namespace nokv {
     const int ERROR_NOT_FOUND = -2;
     const int ERROR_TYPE_ERROR = -3;
     const int ERROR_INVALID_STATE = -4;
+    const int ERROR_MAP_FAILED = -5;
     const int VALUE_NULL = 1;
 
     typedef bool kv_boolean_t;
