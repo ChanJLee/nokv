@@ -105,8 +105,10 @@ namespace nokv {
 
         KV *kv = new KV(fd, meta);
         if (stat(file, &st) != 0) {
+            delete kv;
             return nullptr;
         }
+
         ScopedLock<KV> kv_lock(*kv);
         if (new_file) {
             // todo support unit test only once
