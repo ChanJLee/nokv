@@ -14,9 +14,9 @@ namespace nokv {
     }
 
     void Lock::unlock() {
-        thread_lock_.unlock();
         for (int i = 0; i < 3 && flock(fd_, LOCK_UN) != 0; ++i) {
             LOGD("unlock %d failed, times: %d", fd_, i);
         }
+        thread_lock_.unlock();
     }
 }

@@ -30,11 +30,6 @@ namespace nokv {
     }
 
     int KV::check_kv(KV *kv) {
-        ScopedLock<KV> lock(*kv);
-        if (!kv->reload_if()) {
-            return ERROR_MAP_FAILED;
-        }
-
         if (kv->map_.size() == 0) {
             return 0;
         }
@@ -109,6 +104,7 @@ namespace nokv {
         }
 
         KV *kv = new KV(fd, meta);
+        ScopedLock<KV> kv_lock(*kv);
         if (new_file) {
             kv->init_buf(mem, st.st_size);
             return kv;
@@ -117,10 +113,10 @@ namespace nokv {
         LOGD("bind buf");
         kv->bind_buf(mem, st.st_size);
         if (check_kv(kv)) {
+            LOGD("check kv failed: %s", name);
             kv->close();
             delete kv;
-            // todo
-//            ::remove(file);
+            ::remove(file);
             // todo remove meta
             return nullptr;
         }
