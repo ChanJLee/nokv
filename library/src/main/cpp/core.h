@@ -30,6 +30,10 @@ namespace nokv {
         int resize(size_t size);
 
         bool reload_if();
+
+        void init_buf(void *buf, size_t size);
+
+        void bind_buf(void *buf, size_t size);
     public:
         void lock() { lock_.lock(); }
 
@@ -83,10 +87,6 @@ namespace nokv {
         int put_string(const char *const, const char *);
 
         int put_string(const char *const, const kv_string_t &);
-
-        void init_buf(void *buf, size_t size);
-
-        int bind_buf(void *buf, size_t size);
     };
 }
 

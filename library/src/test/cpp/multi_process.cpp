@@ -55,7 +55,10 @@ void subprocess(char *argv[], std::vector<MockData> &vec, int start, int end)
 {
     nokv::KV::init(argv[1]);
     nokv::KV *kv = nokv::KV::create(argv[2]);
-    std::cout << "ready to write, pid: " << getpid() << std::endl;
+    if (kv == nullptr) {
+        std::cout << "fuck off, create kv failed, pid: " << getpid() << std::endl;
+        exit(SIGBUS);
+    }
 
     for (int i = start; i < end; ++i)
     {
@@ -74,7 +77,6 @@ void subprocess(char *argv[], std::vector<MockData> &vec, int start, int end)
         INSERT_KV(string, 4);
     }
 
-    std::cout << "finish write, pid: " << getpid() << std::endl;
     nokv::KV::destroy(kv);
     exit(0);
 }
@@ -116,13 +118,17 @@ int main(int argc, char *argv[])
         }
     }
 
+    int sub_size = 10;
+    std::cout << "total data size: " << vec.size() << std::endl;
+    int step = vec.size() / sub_size;
+
     std::vector<pid_t> children;
-    for (int i = 0; i < 100; ++i)
+    for (int i = 0; i < sub_size; ++i)
     {
         pid_t pid = fork();
         if (pid == 0)
         {
-            subprocess(argv, vec, i * 10000, (i + 1) * 10000);
+            subprocess(argv, vec, i * step, (i + 1) * step);
         }
         else
         {

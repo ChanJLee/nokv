@@ -76,7 +76,7 @@ namespace nokv {
         if (name[0] == '.') {
             ss << '_';
         }
-        ss << name << ".kv";
+        ss << name << ".nokv";
         const std::string path = ss.str();
         const char *file = path.c_str();
 
@@ -115,10 +115,12 @@ namespace nokv {
         }
 
         LOGD("bind buf");
-        if (kv->bind_buf(mem, st.st_size)) {
+        kv->bind_buf(mem, st.st_size);
+        if (check_kv(kv)) {
             kv->close();
             delete kv;
-            ::remove(file);
+            // todo
+//            ::remove(file);
             // todo remove meta
             return nullptr;
         }
@@ -296,10 +298,9 @@ namespace nokv {
         map_.init(buf_, size);
     }
 
-    int KV::bind_buf(void *buf, size_t size) {
+    void KV::bind_buf(void *buf, size_t size) {
         buf_ = static_cast<byte_t *>(buf);
         map_.bind(buf_, size);
-        return check_kv(this);
     }
 
     bool KV::reload_if() {
