@@ -295,9 +295,10 @@ namespace nokv {
             LOGD("resize get file state failed");
             return ERROR_INVALID_STATE;
         }
+
         if (st.st_size < size) {
             fill_zero(fd_, st.st_size, size - st.st_size);
-        } else {
+        } else if (st.st_size > size) {
             ftruncate(fd_, size);
         }
 
@@ -306,7 +307,6 @@ namespace nokv {
             return ERROR_INVALID_STATE;
         }
 
-        ::msync(buf_, map_.capacity(), MS_SYNC);
         munmap(buf_, map_.capacity());
         void *mem = mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, 0);
         if (mem == MAP_FAILED || mem == nullptr) {
@@ -316,7 +316,7 @@ namespace nokv {
 
         bind_buf(mem, st.st_size);
         seq_ = meta_->next();
-        LOGD("resize to %d", size);
+        LOGD("resize to %d %d", size, getpid());
         return 0;
     }
 
