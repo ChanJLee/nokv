@@ -50,6 +50,7 @@ struct MockData
         {                                                             \
             ScopedLock<KV> lock(*kv);                                 \
             kv->put_##type(vec[i].key.c_str(), vec[i].data_.type##_); \
+            kv->flush(); \
             continue;                                                 \
         }                                                             \
     }

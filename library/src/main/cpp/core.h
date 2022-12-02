@@ -38,10 +38,11 @@ namespace nokv {
         void bind_buf(void *buf, size_t size);
 
     public:
-        void lock() { lock_->lock(); }
+        void lock() {
+            lock_->lock();
+        }
 
         void unlock() {
-            flush();
             lock_->unlock();
         }
 

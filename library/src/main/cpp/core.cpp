@@ -22,8 +22,7 @@ namespace nokv {
     std::string gWs;
 
     void KV::flush() {
-        int code = ::msync(buf_, map_.capacity(), MS_SYNC);
-        LOGD("flush code %d", code);
+        ::msync(buf_, map_.capacity(), MS_SYNC);
     }
 
     void KV::close() {
@@ -197,13 +196,19 @@ namespace nokv {
         path += "/.kv.lock";
 
         const char *file = path.c_str();
-        bool new_file = stat(file, &st) != 0;
         int fd = open(file, O_RDWR | O_CREAT | O_CLOEXEC, S_IWUSR | S_IRUSR);
         if (fd < 0) {
             LOGI("open %s failed", file);
             return -1;
         }
 
+        gLock = new Lock(fd);
+        ScopedLock<nokv::Lock> file_lock(*gLock);
+        if (stat(file, &st) != 0) {
+            return -1;
+        }
+
+        bool new_file = st.st_size == 0;
         if (new_file) {
             size_t size = getpagesize() * 16;
             st.st_size = size;
@@ -218,7 +223,6 @@ namespace nokv {
         }
 
         KVMeta::init(mem, st.st_size);
-        gLock = new Lock(fd);
         return 0;
     }
 
@@ -357,8 +361,6 @@ namespace nokv {
             return false;
         }
 
-        flush();
-        munmap(buf_, map_.capacity());
         bind_buf(mem, st.st_size);
         seq_ = seq;
         return true;
