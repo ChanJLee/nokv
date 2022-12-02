@@ -40,11 +40,12 @@ namespace nokv {
         return crc != kv->map_.crc();
     }
 
-    void fill_zero(int fd, size_t len) {
+    void fill_zero(int fd, uint32_t start, size_t len) {
         if (len == 0) {
             return;
         }
 
+        lseek(fd, start, SEEK_SET);
         constexpr static const size_t _buf_size = 4096;
         byte_t buf[_buf_size] = {0};
 
@@ -56,6 +57,8 @@ namespace nokv {
             ::write(fd, buf, left < _buf_size ? left : _buf_size);
             left -= _buf_size;
         }
+        lseek(fd, 0, SEEK_SET);
+        fsync(fd);
     }
 
     KV *KV::create(const char *name) {
@@ -93,8 +96,7 @@ namespace nokv {
             size_t size = getpagesize();
             st.st_size = size;
             // avoid BUS error
-            fill_zero(fd, size);
-            fsync(fd);
+            fill_zero(fd, 0, size);
         }
 
         void *mem = mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
@@ -166,6 +168,7 @@ namespace nokv {
         if (code != 0) {
             return code;
         }
+        /* ignore rtn code */
         resize(getpagesize());
         return 0;
     }
@@ -201,8 +204,7 @@ namespace nokv {
             size_t size = getpagesize() * 16;
             st.st_size = size;
             // avoid BUS error
-            fill_zero(fd, size);
-            fsync(fd);
+            fill_zero(fd, 0, size);
         }
 
         void *mem = mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
@@ -228,7 +230,9 @@ namespace nokv {
         } \
         \
         if (code == ERROR_OVERFLOW) { \
-            resize(map_.capacity() * 2); \
+            if (resize(map_.capacity() * 2)) {  \
+                return ERROR_OVERFLOW; \
+            } \
         } \
         \
         return map_.put_##type(key, v); \
@@ -257,7 +261,9 @@ namespace nokv {
         }
 
         if (code == ERROR_OVERFLOW) {
-            resize(map_.capacity() * 2);
+            if (resize(map_.capacity() * 2)) {
+                return ERROR_OVERFLOW;
+            }
         }
 
         return map_.put_null(key);
@@ -284,7 +290,33 @@ namespace nokv {
     DEFINE_GET(array)
 
     int KV::resize(size_t size) {
-        // todo
+        struct stat st = {};
+        if (fstat(fd_, &st)) {
+            LOGD("resize get file state failed");
+            return ERROR_INVALID_STATE;
+        }
+        if (st.st_size < size) {
+            fill_zero(fd_, st.st_size, size - st.st_size);
+        } else {
+            ftruncate(fd_, size);
+        }
+
+        if (fstat(fd_, &st) || st.st_size != size) {
+            LOGD("resize check file state failed");
+            return ERROR_INVALID_STATE;
+        }
+
+        ::msync(buf_, map_.capacity(), MS_SYNC);
+        munmap(buf_, map_.capacity());
+        void *mem = mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, 0);
+        if (mem == MAP_FAILED || mem == nullptr) {
+            LOGI("resize mmap failed");
+            return ERROR_MAP_FAILED;
+        }
+
+        bind_buf(mem, st.st_size);
+        seq_ = meta_->next();
+        LOGD("resize to %d", size);
         return 0;
     }
 
@@ -322,8 +354,7 @@ namespace nokv {
         }
 
         munmap(buf_, map_.capacity());
-        buf_ = static_cast<byte_t *>(mem);
-        map_.bind(buf_, st.st_size);
+        bind_buf(mem, st.st_size);
         seq_ = seq;
         return true;
     }
