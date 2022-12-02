@@ -88,7 +88,9 @@ namespace nokv {
         std::unique_ptr<Lock> file_lock(new Lock(fd));
         ScopedLock<nokv::Lock> lock(*file_lock.get());
         struct stat st{};
-        bool new_file = stat(file, &st) != 0;
+        if (stat(file, &st) != 0) {
+            return nullptr;
+        }
 
         KVMeta *meta = KVMeta::get(name);
         if (meta == nullptr) {
@@ -96,6 +98,7 @@ namespace nokv {
             return nullptr;
         }
 
+        bool new_file = st.st_size == 0;
         if (new_file) {
             size_t size = getpagesize();
             st.st_size = size;
