@@ -13,17 +13,19 @@
 
 namespace nokv {
     class KV {
-        Lock lock_;
+        Lock *lock_;
         int fd_;
         Map map_;
         byte_t *buf_;
         uint32_t seq_;
         KVMeta *meta_;
 
-        KV(int fd, nokv::KVMeta *meta) : lock_(fd), fd_(fd),
-                                         map_(), seq_(meta->seq()),
-                                         meta_(meta) {
+        KV(int fd, Lock *lock, nokv::KVMeta *meta) : lock_(lock), fd_(fd),
+                                                     map_(), seq_(meta->seq()),
+                                                     meta_(meta) {
         }
+
+        ~KV() { delete lock_; }
 
         static int check_kv(KV *kv);
 
@@ -34,10 +36,11 @@ namespace nokv {
         void init_buf(void *buf, size_t size);
 
         void bind_buf(void *buf, size_t size);
-    public:
-        void lock() { lock_.lock(); }
 
-        void unlock() { lock_.unlock(); }
+    public:
+        void lock() { lock_->lock(); }
+
+        void unlock() { lock_->unlock(); }
 
         void flush();
 

@@ -67,7 +67,7 @@ namespace nokv {
             return nullptr;
         }
 
-        ScopedLock<nokv::Lock> lock(*gLock);
+        ScopedLock<nokv::Lock> create_lock(*gLock);
 
         std::stringstream ss;
         ss << gWs << "/";
@@ -85,6 +85,9 @@ namespace nokv {
             LOGI("open %s failed", file);
             return NULL;
         }
+
+        std::unique_ptr<Lock> file_lock(new Lock(fd));
+        ScopedLock<nokv::Lock> lock(*file_lock.get());
 
         KVMeta *meta = KVMeta::get(name);
         if (meta == nullptr) {
@@ -105,10 +108,9 @@ namespace nokv {
             return nullptr;
         }
 
-        KV *kv = new KV(fd, meta);
-        ScopedLock<KV> kv_lock(*kv);
+        KV *kv = new KV(fd, file_lock.release(), meta);
         if (stat(file, &st) != 0) {
-            kv_lock.~ScopedLock<KV>();
+            lock.~ScopedLock<nokv::Lock>();
             delete kv;
             return nullptr;
         }
@@ -124,7 +126,7 @@ namespace nokv {
         if (check_kv(kv)) {
             LOGD("check kv failed: %s", name);
             kv->close();
-            kv_lock.~ScopedLock<KV>();
+            lock.~ScopedLock<nokv::Lock>();
             delete kv;
             ::remove(file);
             // todo remove meta
