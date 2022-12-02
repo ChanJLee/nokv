@@ -79,8 +79,6 @@ namespace nokv {
         const std::string path = ss.str();
         const char *file = path.c_str();
 
-        struct stat st{};
-        bool new_file = stat(file, &st) != 0;
         int fd = open(file, O_RDWR | O_CREAT | O_CLOEXEC, S_IWUSR | S_IRUSR);
         if (fd < 0) {
             LOGI("open %s failed", file);
@@ -89,6 +87,9 @@ namespace nokv {
 
         std::unique_ptr<Lock> file_lock(new Lock(fd));
         ScopedLock<nokv::Lock> lock(*file_lock.get());
+
+        struct stat st{};
+        bool new_file = stat(file, &st) != 0;
 
         KVMeta *meta = KVMeta::get(name);
         if (meta == nullptr) {
@@ -110,12 +111,6 @@ namespace nokv {
         }
 
         KV *kv = new KV(fd, file_lock.release(), meta);
-        if (stat(file, &st) != 0) {
-            lock.~ScopedLock<nokv::Lock>();
-            delete kv;
-            return nullptr;
-        }
-
         if (new_file) {
             // todo support unit test only once
             kv->init_buf(mem, st.st_size);
