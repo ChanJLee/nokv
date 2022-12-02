@@ -103,6 +103,10 @@ namespace nokv {
             fill_zero(fd, 0, size);
         }
 
+        if (stat(file, &st) != 0) {
+            return nullptr;
+        }
+
         void *mem = mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
         if (mem == MAP_FAILED || mem == nullptr) {
             LOGI("mmap %s failed", file);
@@ -110,12 +114,6 @@ namespace nokv {
         }
 
         KV *kv = new KV(fd, file_lock.release(), meta);
-        if (stat(file, &st) != 0) {
-            lock.~ScopedLock<nokv::Lock>();
-            delete kv;
-            return nullptr;
-        }
-
         if (new_file) {
             // todo support unit test only once
             kv->init_buf(mem, st.st_size);
