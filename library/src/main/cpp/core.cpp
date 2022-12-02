@@ -15,6 +15,7 @@
 #include <stddef.h>
 #include "meta.h"
 #include <sstream>
+#include <memory>
 
 namespace nokv {
     Lock *gLock;
