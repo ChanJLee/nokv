@@ -87,7 +87,6 @@ namespace nokv {
 
         std::unique_ptr<Lock> file_lock(new Lock(fd));
         ScopedLock<nokv::Lock> lock(*file_lock.get());
-
         struct stat st{};
         bool new_file = stat(file, &st) != 0;
 
@@ -111,6 +110,12 @@ namespace nokv {
         }
 
         KV *kv = new KV(fd, file_lock.release(), meta);
+        if (stat(file, &st) != 0) {
+            lock.~ScopedLock<nokv::Lock>();
+            delete kv;
+            return nullptr;
+        }
+
         if (new_file) {
             // todo support unit test only once
             kv->init_buf(mem, st.st_size);
