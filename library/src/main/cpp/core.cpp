@@ -106,12 +106,13 @@ namespace nokv {
         }
 
         KV *kv = new KV(fd, meta);
+        ScopedLock<KV> kv_lock(*kv);
         if (stat(file, &st) != 0) {
+            kv_lock.~ScopedLock<KV>();
             delete kv;
             return nullptr;
         }
 
-        ScopedLock<KV> kv_lock(*kv);
         if (new_file) {
             // todo support unit test only once
             kv->init_buf(mem, st.st_size);
@@ -123,6 +124,7 @@ namespace nokv {
         if (check_kv(kv)) {
             LOGD("check kv failed: %s", name);
             kv->close();
+            kv_lock.~ScopedLock<KV>();
             delete kv;
             ::remove(file);
             // todo remove meta
