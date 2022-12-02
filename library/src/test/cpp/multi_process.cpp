@@ -105,7 +105,8 @@ void subprocess(char *argv[], std::vector<MockData> &vec, int start, int end)
 int main(int argc, char *argv[])
 {
     std::vector<MockData> vec;
-    for (int i = 0; i < 1000000; ++i)
+    int total = 10000;
+    for (int i = 0; i < total; ++i)
     {
         PUSH_MOCK_DATA("key_int32_%d", int32, 1, 1);
         PUSH_MOCK_DATA("key_float_%d", float, 3.5, 2);
@@ -188,7 +189,7 @@ int main(int argc, char *argv[])
     for (auto& item : vec) {
         
     }
-    for (int i = 0; i < 1000000; ++i)
+    for (int i = 0; i < total; ++i)
     {
         CHECK_KV("key_int32_%d", int32, 1);
         CHECK_KV("key_float_%d", float, 3.5);
