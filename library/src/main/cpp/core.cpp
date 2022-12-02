@@ -22,7 +22,8 @@ namespace nokv {
     std::string gWs;
 
     void KV::flush() {
-        ::msync(buf_, map_.capacity(), MS_SYNC);
+        int code = ::msync(buf_, map_.capacity(), MS_SYNC);
+        LOGD("flush code %d", code);
     }
 
     void KV::close() {
@@ -82,7 +83,7 @@ namespace nokv {
         int fd = open(file, O_RDWR | O_CREAT | O_CLOEXEC, S_IWUSR | S_IRUSR);
         if (fd < 0) {
             LOGI("open %s failed", file);
-            return NULL;
+            return nullptr;
         }
 
         std::unique_ptr<Lock> file_lock(new Lock(fd));
@@ -106,7 +107,7 @@ namespace nokv {
             fill_zero(fd, 0, size);
         }
 
-        void *mem = mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+        void *mem = mmap(nullptr, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
         if (mem == MAP_FAILED || mem == nullptr) {
             LOGI("mmap %s failed", file);
             return nullptr;
@@ -115,6 +116,7 @@ namespace nokv {
         KV *kv = new KV(fd, file_lock.release(), meta);
         if (new_file) {
             // todo support unit test only once
+            LOGD("init buf");
             kv->init_buf(mem, st.st_size);
             return kv;
         }
@@ -139,7 +141,7 @@ namespace nokv {
             return;
         }
 
-        munmap(kv->buf_, kv->map_.capacity());
+        kv->flush();
         kv->close();
         delete kv;
     }
@@ -318,7 +320,7 @@ namespace nokv {
 
         bind_buf(mem, st.st_size);
         seq_ = meta_->next();
-        LOGD("resize to %d %d", size, getpid());
+        LOGD("resize to %d", size);
         return 0;
     }
 
@@ -355,6 +357,7 @@ namespace nokv {
             return false;
         }
 
+        flush();
         munmap(buf_, map_.capacity());
         bind_buf(mem, st.st_size);
         seq_ = seq;

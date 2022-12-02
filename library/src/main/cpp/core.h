@@ -40,7 +40,10 @@ namespace nokv {
     public:
         void lock() { lock_->lock(); }
 
-        void unlock() { lock_->unlock(); }
+        void unlock() {
+            flush();
+            lock_->unlock();
+        }
 
         void flush();
 

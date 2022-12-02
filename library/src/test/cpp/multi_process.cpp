@@ -7,6 +7,7 @@
 #include <cstring>
 #include <sys/wait.h>
 #include <sstream>
+#include <fstream>
 
 using namespace nokv;
 
@@ -113,35 +114,35 @@ int main(int argc, char *argv[])
     for (int i = 0; i < total; ++i)
     {
         PUSH_MOCK_DATA("key_int32_", int32, 1, 1);
-        PUSH_MOCK_DATA("key_float_", float, 3.5, 2);
-        PUSH_MOCK_DATA("key_int64_", int64, 2, 3);
-        PUSH_MOCK_DATA("key_boolean_", boolean, true, 4);
-        {
-            std::stringstream ss;
-            ss << "key_string_" << i;
-            MockData data(ss.str());
-            data.type_ = 5;
-            data.data_.string_.str_ = fuck;
-            vec.push_back(data);
-        }
-        {
-            std::stringstream ss;
-            ss << "key_null_" << i;
-            MockData data(ss.str());
-            data.type_ = 6;
-            vec.push_back(data);
-        }
-        {
-            std::stringstream ss;
-            ss << "key_array_" << i;
-            MockData data(ss.str());
-            data.type_ = 7;
-            kv_array_t::create(data.data_.array_);
-            data.data_.array_.put_string(fuck);
-            data.data_.array_.put_null();
-            data.data_.array_.put_string(fuck);
-            vec.push_back(data);
-        }
+        // PUSH_MOCK_DATA("key_float_", float, 3.5, 2);
+        // PUSH_MOCK_DATA("key_int64_", int64, 2, 3);
+        // PUSH_MOCK_DATA("key_boolean_", boolean, true, 4);
+        // {
+        //     std::stringstream ss;
+        //     ss << "key_string_" << i;
+        //     MockData data(ss.str());
+        //     data.type_ = 5;
+        //     data.data_.string_.str_ = fuck;
+        //     vec.push_back(data);
+        // }
+        // {
+        //     std::stringstream ss;
+        //     ss << "key_null_" << i;
+        //     MockData data(ss.str());
+        //     data.type_ = 6;
+        //     vec.push_back(data);
+        // }
+        // {
+        //     std::stringstream ss;
+        //     ss << "key_array_" << i;
+        //     MockData data(ss.str());
+        //     data.type_ = 7;
+        //     kv_array_t::create(data.data_.array_);
+        //     data.data_.array_.put_string(fuck);
+        //     data.data_.array_.put_null();
+        //     data.data_.array_.put_string(fuck);
+        //     vec.push_back(data);
+        // }
     }
 
     int sub_size = 10;
@@ -166,7 +167,7 @@ int main(int argc, char *argv[])
     int w;
     for (int i = 0; i < children.size(); ++i)
     {
-        int child  = children[i];
+        int child = children[i];
         do
         {
             w = waitpid(child, &status, WUNTRACED | WCONTINUED);
@@ -186,28 +187,53 @@ int main(int argc, char *argv[])
             }
         } while (!WIFEXITED(status) && !WIFSIGNALED(status));
 
-        if (WIFEXITED(status)) {
+        if (WIFEXITED(status))
+        {
             children[i] = -1;
         }
     }
 
     std::cout << "start check result" << std::endl;
-    for (auto child : children) {
-        if (child != -1) {
+    for (auto child : children)
+    {
+        if (child != -1)
+        {
             std::cerr << "check child failed: " << child << std::endl;
             exit(SIGTERM);
         }
     }
 
-
     nokv::KV::init(argv[1]);
     nokv::KV *kv = nokv::KV::create(argv[2]);
+
+    std::cout << "kv size: " << kv->size() << std::endl;
+    std::string path = argv[1];
+    path += "/log.txt";
+    std::fstream os(path, std::fstream::out);
+    kv->read_all([&](const char *key, nokv::Entry *entry)
+                 { os << key << ", tag: " << entry->type() << " " << entry->as_int32() << std::endl; });
+    os.flush();
+    os.close();
+
+    for (auto &v : vec)
+    {
+        if (v.type_ == 1)
+        {
+            kv_int32_t tmp = 0;
+            kv->get_int32(v.key.c_str(), tmp);
+            if (tmp != 1)
+            {
+                std::cerr << "check key: " << v.key << " failed" << std::endl;
+                exit(SIGTERM);
+            }
+        }
+    }
     for (int i = 0; i < total; ++i)
     {
         CHECK_KV("key_int32_", int32, 1);
-        CHECK_KV("key_float_", float, 3.5);
-        CHECK_KV("key_int64_", int64, 2);
-        CHECK_KV("key_boolean_", boolean, true);
+        // CHECK_KV("key_float_", float, 3.5);
+        // CHECK_KV("key_int64_", int64, 2);
+        // CHECK_KV("key_boolean_", boolean, true);
         // {
         //     char key[24] = {0};
         //     sscanf(key, "key_string_%d", &i);
