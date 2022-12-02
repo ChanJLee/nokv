@@ -106,10 +106,6 @@ namespace nokv {
             fill_zero(fd, 0, size);
         }
 
-        if (stat(file, &st) != 0) {
-            return nullptr;
-        }
-
         void *mem = mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
         if (mem == MAP_FAILED || mem == nullptr) {
             LOGI("mmap %s failed", file);
