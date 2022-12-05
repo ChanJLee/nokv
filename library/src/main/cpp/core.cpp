@@ -336,7 +336,7 @@ namespace nokv {
             return false;
         }
 
-        void *mem = mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, 0);
+        void *mem = mremap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, 0);
         if (mem == MAP_FAILED || mem == nullptr) {
             return false;
         }
