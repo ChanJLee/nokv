@@ -5,7 +5,7 @@
 #include "meta.h"
 #include <string>
 #include "kv.h"
-#include <time.h>
+#include <ctime>
 
 namespace nokv {
     bool KVMeta::operator==(const KVMeta &rhs) const {
