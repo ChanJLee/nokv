@@ -2,6 +2,7 @@
 #include "core.h"
 #include "scoped_str.h"
 #include "lock.h"
+#include "log.h"
 
 #define AS_STR(type) #type
 
@@ -235,14 +236,19 @@ Java_me_chan_nkv_NoKV_nativeGetAll(JNIEnv *env, jclass clazz, jlong ptr) {
     auto kv = (nokv::KV *) ptr;
 
     jclass map_clazz = env->FindClass("java/util/HashMap");
-    jmethodID ctor = env->GetMethodID(map_clazz, "<init>", "()V");
-    jmethodID put_method = env->GetMethodID(map_clazz, "put",
+    jmethodID map_ctor = env->GetMethodID(map_clazz, "<init>", "()V");
+    jmethodID put_method = env->GetMethodID(env->FindClass("java/util/Map"), "put",
                                             "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
-    jobject map = env->NewObject(map_clazz, ctor);
+    jobject map = env->NewObject(map_clazz, map_ctor);
     TO_BOX_TYPE(Boolean, Z)
     TO_BOX_TYPE(Integer, I)
     TO_BOX_TYPE(Float, F)
     TO_BOX_TYPE(Long, J)
+
+    jclass set_clazz = env->FindClass("java/util/HashSet");
+    jmethodID set_ctor = env->GetMethodID(set_clazz, "<init>", "()V");
+    jmethodID add_method = env->GetMethodID(env->FindClass("java/util/Set"), "add",
+                                            "(Ljava/lang/Object;)Z");
 
     nokv::ScopedLock<nokv::KV, true> lock(*kv);
     kv->read_all([&](const char *const key, nokv::Entry *entry) {
@@ -269,8 +275,23 @@ Java_me_chan_nkv_NoKV_nativeGetAll(JNIEnv *env, jclass clazz, jlong ptr) {
             env->CallObjectMethod(map, put_method, env->NewStringUTF(key),
                                   env->NewStringUTF(entry->as_string().str_));
         } else if (type == nokv::TYPE_ARRAY) {
-            // todo
-            env->CallObjectMethod(map, put_method, env->NewStringUTF(key), nullptr);
+            jobject set = env->NewObject(set_clazz, set_ctor);
+            auto array = entry->as_array();
+            nokv::kv_array_t::iterator it = array.it();
+            nokv::Entry ent;
+            while (it.next(&ent)) {
+                auto t = ent.type();
+                if (t == nokv::TYPE_NULL) {
+                    env->CallBooleanMethod(set, add_method, nullptr);
+                } else if (t == nokv::TYPE_STRING) {
+                    env->CallBooleanMethod(set, add_method,
+                                           env->NewStringUTF(ent.as_string().str_));
+                } else {
+                    // todo invalid state
+                    LOGD("read map invalid state");
+                }
+            }
+            env->CallObjectMethod(map, put_method, env->NewStringUTF(key), set);
         }
     });
     return map;
