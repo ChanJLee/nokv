@@ -17,12 +17,10 @@ const char *fuck = "Mr. and Mrs. Dursley, of number four, Privet Drive, were pro
                    "When Mr. and Mrs. Dursley woke up on the dull, gray Tuesday our story starts, there was nothing about the cloudy sky outside to suggest that strange and mysterious things would soon be happening all over the country. Mr. Dursley hummed as he picked out his most boring tie for work, and Mrs. Dursley gossiped away happily as she wrestled a screaming Dudley into his high chair."
                    "None of them noticed a large, tawny owl flutter past the window.";
 
-struct MockData
-{
+struct MockData {
     std::string key;
     int type_;
-    union
-    {
+    union {
         kv_boolean_t boolean_;
         kv_float_t float_;
         kv_int32_t int32_;
@@ -76,26 +74,22 @@ struct MockData
         }                                                                     \
     }
 
-void subprocess(char *argv[], std::vector<MockData> &vec, int start, int end)
-{
+void subprocess(char *argv[], std::vector <MockData> &vec, int start, int end) {
     nokv::KV::init(argv[1]);
     nokv::KV *kv = nokv::KV::create(argv[2]);
-    if (kv == nullptr)
-    {
+    if (kv == nullptr) {
         std::cout << "fuck off, create kv failed, pid: " << getpid() << std::endl;
         exit(SIGBUS);
     }
 
-    for (int i = start; i < end; ++i)
-    {
+    for (int i = start; i < end; ++i) {
         INSERT_KV(int32, 1);
         INSERT_KV(float, 2);
         INSERT_KV(int64, 3);
         INSERT_KV(boolean, 4);
         INSERT_KV(string, 5);
         {
-            if (vec[i].type_ == 6)
-            {
+            if (vec[i].type_ == 6) {
                 ScopedLock<KV> lock(*kv);
                 kv->put_null(vec[i].key.c_str());
                 continue;
@@ -108,97 +102,82 @@ void subprocess(char *argv[], std::vector<MockData> &vec, int start, int end)
     exit(0);
 }
 
-int main(int argc, char *argv[])
-{
-    std::vector<MockData> vec;
-    int total = 5000;
-    for (int i = 0; i < total; ++i)
-    {
+int main(int argc, char *argv[]) {
+    std::vector <MockData> vec;
+    int total = 10000;
+    for (int i = 0; i < total; ++i) {
         PUSH_MOCK_DATA("key_int32_", int32, 1, 1);
-         PUSH_MOCK_DATA("key_float_", float, 3.5, 2);
-         PUSH_MOCK_DATA("key_int64_", int64, 2, 3);
-         PUSH_MOCK_DATA("key_boolean_", boolean, true, 4);
-         {
-             std::stringstream ss;
-             ss << "key_string_" << i;
-             MockData data(ss.str());
-             data.type_ = 5;
-             data.data_.string_.str_ = fuck;
-             vec.push_back(data);
-         }
-         {
-             std::stringstream ss;
-             ss << "key_null_" << i;
-             MockData data(ss.str());
-             data.type_ = 6;
-             vec.push_back(data);
-         }
-         {
-             std::stringstream ss;
-             ss << "key_array_" << i;
-             MockData data(ss.str());
-             data.type_ = 7;
-             kv_array_t::create(data.data_.array_);
-             data.data_.array_.put_string(fuck);
-             data.data_.array_.put_null();
-             data.data_.array_.put_string(fuck);
-             vec.push_back(data);
-         }
+//         PUSH_MOCK_DATA("key_float_", float, 3.5, 2);
+//         PUSH_MOCK_DATA("key_int64_", int64, 2, 3);
+//         PUSH_MOCK_DATA("key_boolean_", boolean, true, 4);
+//         {
+//             std::stringstream ss;
+//             ss << "key_string_" << i;
+//             MockData data(ss.str());
+//             data.type_ = 5;
+//             data.data_.string_.str_ = fuck;
+//             vec.push_back(data);
+//         }
+//         {
+//             std::stringstream ss;
+//             ss << "key_null_" << i;
+//             MockData data(ss.str());
+//             data.type_ = 6;
+//             vec.push_back(data);
+//         }
+//         {
+//             std::stringstream ss;
+//             ss << "key_array_" << i;
+//             MockData data(ss.str());
+//             data.type_ = 7;
+//             kv_array_t::create(data.data_.array_);
+//             data.data_.array_.put_string(fuck);
+//             data.data_.array_.put_null();
+//             data.data_.array_.put_string(fuck);
+//             vec.push_back(data);
+//         }
     }
 
     int sub_size = 10;
     std::cout << "total data size: " << vec.size() << std::endl;
     int step = vec.size() / sub_size;
 
-    std::vector<pid_t> children;
-    for (int i = 0; i < sub_size; ++i)
-    {
+    std::vector <pid_t> children;
+    for (int i = 0; i < sub_size; ++i) {
         pid_t pid = fork();
-        if (pid == 0)
-        {
+        if (pid == 0) {
             subprocess(argv, vec, i * step, (i + 1) * step);
-        }
-        else
-        {
+        } else {
             children.push_back(pid);
         }
     }
 
     int status;
     int w;
-    for (int i = 0; i < children.size(); ++i)
-    {
+    for (int i = 0; i < children.size(); ++i) {
         int child = children[i];
-        do
-        {
+        do {
             w = waitpid(child, &status, WUNTRACED | WCONTINUED);
-            if (w == -1)
-            {
+            if (w == -1) {
                 perror("waitpid");
                 exit(EXIT_FAILURE);
             }
 
-            if (WIFSIGNALED(status))
-            {
+            if (WIFSIGNALED(status)) {
                 printf("killed by signal %d, pid %d\n", WTERMSIG(status), child);
-            }
-            else if (WIFSTOPPED(status))
-            {
+            } else if (WIFSTOPPED(status)) {
                 printf("stopped by signal %d, pid %d\n", WSTOPSIG(status), child);
             }
         } while (!WIFEXITED(status) && !WIFSIGNALED(status));
 
-        if (WIFEXITED(status))
-        {
+        if (WIFEXITED(status)) {
             children[i] = -1;
         }
     }
 
     std::cout << "start check result" << std::endl;
-    for (auto child : children)
-    {
-        if (child != -1)
-        {
+    for (auto child: children) {
+        if (child != -1) {
             std::cerr << "check child failed: " << child << std::endl;
             exit(SIGTERM);
         }
@@ -207,25 +186,21 @@ int main(int argc, char *argv[])
     nokv::KV::init(argv[1]);
     nokv::KV *kv = nokv::KV::create(argv[2]);
 
-    for (auto &v : vec)
-    {
-        if (v.type_ == 1)
-        {
+    for (auto &v: vec) {
+        if (v.type_ == 1) {
             kv_int32_t tmp = 0;
             kv->get_int32(v.key.c_str(), tmp);
-            if (tmp != 1)
-            {
+            if (tmp != 1) {
                 std::cerr << "check key: " << v.key << " failed" << std::endl;
                 exit(SIGTERM);
             }
         }
     }
-    for (int i = 0; i < total; ++i)
-    {
+    for (int i = 0; i < total; ++i) {
         CHECK_KV("key_int32_", int32, 1);
-         CHECK_KV("key_float_", float, 3.5);
-         CHECK_KV("key_int64_", int64, 2);
-         CHECK_KV("key_boolean_", boolean, true);
+//         CHECK_KV("key_float_", float, 3.5);
+//         CHECK_KV("key_int64_", int64, 2);
+//         CHECK_KV("key_boolean_", boolean, true);
 //         {
 //             char key[24] = {0};
 //             sscanf(key, "key_string_%d", &i);
@@ -253,6 +228,7 @@ int main(int argc, char *argv[])
 //             vec.push_back(data);
 //         }
     }
+    std::cout << "pass" << std::endl;
     nokv::KV::destroy(kv);
     return 0;
 }

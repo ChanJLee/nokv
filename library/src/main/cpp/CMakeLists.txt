@@ -5,7 +5,7 @@
 # Sets the minimum version of CMake required to build the native library.
 
 cmake_minimum_required(VERSION 3.18.1)
-
+set(CMAKE_CXX_STANDARD 17)
 # Declares and names the project.
 
 project("nokv")

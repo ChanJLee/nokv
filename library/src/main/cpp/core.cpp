@@ -16,10 +16,12 @@
 #include "meta.h"
 #include <sstream>
 #include <memory>
+#include "lru.h"
 
 namespace nokv {
     Lock *gLock;
     std::string gWs;
+    lru_cache<std::string, KV *> gLruCache(10);
 
     void KV::flush() {
         ::msync(buf_, map_.capacity(), MS_SYNC);

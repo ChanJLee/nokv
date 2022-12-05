@@ -8,7 +8,7 @@
 #include "lock.h"
 #include "kv.h"
 #include "meta.h"
-#include <cstring>
+#include <string>
 #include <functional>
 
 namespace nokv {
@@ -18,10 +18,12 @@ namespace nokv {
         Map map_;
         byte_t *buf_;
         KVMeta meta_;
+        std::string name_;
 
-        KV(int fd, Lock *lock, const nokv::KVMeta &meta) : lock_(lock), fd_(fd),
-                                                     map_(),
-                                                     meta_(meta) {
+        KV(int fd, const char *name, Lock *lock, const nokv::KVMeta &meta) : lock_(lock), fd_(fd),
+                                                                             map_(),
+                                                                             meta_(meta),
+                                                                             name_(name) {
         }
 
         ~KV() { delete lock_; }
