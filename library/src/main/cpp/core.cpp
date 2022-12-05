@@ -337,7 +337,7 @@ namespace nokv {
         }
 
         // todo check if mem leak
-        void *mem = mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, 0);
+        void *mem = mmap(buf_, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, 0);
         if (mem == MAP_FAILED || mem == nullptr) {
             return false;
         }
