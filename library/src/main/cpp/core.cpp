@@ -72,7 +72,7 @@ namespace nokv {
             return nullptr;
         }
 
-        ScopedLock<nokv::Lock> create_lock(*gLock);
+        ScopedLock<nokv::Lock, false> create_lock(*gLock);
 
         std::stringstream ss;
         ss << gWs << "/";
@@ -90,7 +90,7 @@ namespace nokv {
         }
 
         std::unique_ptr<Lock> file_lock(new Lock(fd));
-        ScopedLock<nokv::Lock> lock(*file_lock.get());
+        ScopedLock<nokv::Lock, true> lock(*file_lock.get());
         struct stat st{};
         if (stat(file, &st) != 0) {
             return nullptr;
