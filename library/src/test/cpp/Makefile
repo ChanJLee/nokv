@@ -8,7 +8,7 @@ build: core.o lock.o main.o multi_process.o kv.o meta.o
 	$(CC) lock.o core.o multi_process.o kv.o meta.o -lz -o multi_process
 
 meta.o:
-	$(CC) $(CFLAGS) -c ../../main/cpp/meta.cpp
+	$(CC) $(CFLAGS) -D st_mtim=st_mtimespec -c ../../main/cpp/meta.cpp
 
 multi_process.o:
 	$(CC) $(CFLAGS) -c multi_process.cpp

@@ -3,66 +3,44 @@
 //
 
 #include "meta.h"
-#include <sys/mman.h>
 #include <string>
 #include "kv.h"
-#include <map>
+#include <time.h>
 
 namespace nokv {
-    byte_t *gMetaBuf;
-    size_t gMetaBufCapacity;
-    std::map<const char *, KVMeta *> gMetaTable;
+    bool KVMeta::operator==(const KVMeta &rhs) const {
+        return fd_ == rhs.fd_ &&
+               seq_.tv_sec == rhs.seq_.tv_sec &&
+               seq_.tv_nsec == rhs.seq_.tv_nsec &&
+               size_ == rhs.size_;
+    }
 
-    KVMeta *KVMeta::get(const char *name) {
-        const auto &it = gMetaTable.find(name);
-        if (it != gMetaTable.end()) {
-            return it->second;
-        }
+    bool KVMeta::operator!=(const KVMeta &rhs) const {
+        return !(rhs == *this);
+    }
 
-        byte_t *begin = gMetaBuf;
-        byte_t *end = begin + gMetaBufCapacity;
-        while (begin < end) {
-            const char *key = reinterpret_cast<const char *>(begin);
-            size_t key_len = strlen(key);
-            if (key_len == 0) {
-                size_t offset = strlen(name) + 1;
-                memcpy(begin, name, offset);
-                begin += offset;
-                break;
-            }
-
-            if (strcmp(key, name) == 0) {
-                begin = begin + key_len + 1;
-                break;
-            }
-
-            begin = begin + key_len + 1 /* \0 */ + 4 /* seq size */;
-        }
-
-        if (begin >= end) {
-            return nullptr;
-        }
-
-        auto *meta = new KVMeta(begin);
-        gMetaTable[name] = meta;
+    KVMeta KVMeta::seq(int fd) {
+        KVMeta meta = {
+                .fd_ = fd
+        };
+        struct stat st = {};
+        fstat(fd, &st);
+        meta.update(st);
         return meta;
     }
 
-    uint32_t KVMeta::seq() {
-        uint32_t id = 0;
-        memcpy(&id, buf_, sizeof(id));
-        return id;
+    void KVMeta::next() {
+        struct timespec ts;
+        clock_gettime(CLOCK_REALTIME, &ts);
+        if (seq_.tv_sec == ts.tv_sec) {
+            seq_.tv_sec++;
+            return;
+        }
+        seq_ = ts;
     }
 
-    uint32_t KVMeta::next() {
-        uint32_t id = seq() + 1;
-        memcpy(buf_, &id, sizeof(id));
-        ::msync(buf_, sizeof(id), MS_SYNC);
-        return id;
-    }
-
-    void KVMeta::init(void *buf, size_t size) {
-        gMetaBuf = static_cast<byte_t *>(buf);
-        gMetaBufCapacity = size;
+    void KVMeta::update(const struct stat &st) {
+        seq_ = st.st_mtim;
+        size_ = st.st_size;
     }
 }

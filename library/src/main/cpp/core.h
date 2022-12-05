@@ -17,11 +17,10 @@ namespace nokv {
         int fd_;
         Map map_;
         byte_t *buf_;
-        uint32_t seq_;
-        KVMeta *meta_;
+        KVMeta meta_;
 
-        KV(int fd, Lock *lock, nokv::KVMeta *meta) : lock_(lock), fd_(fd),
-                                                     map_(), seq_(meta->seq()),
+        KV(int fd, Lock *lock, const nokv::KVMeta &meta) : lock_(lock), fd_(fd),
+                                                     map_(),
                                                      meta_(meta) {
         }
 

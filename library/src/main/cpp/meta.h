@@ -7,21 +7,27 @@
 
 #include <inttypes.h>
 #include <stddef.h>
+#include <sys/time.h>
+#include <sys/stat.h>
 
 namespace nokv {
 
-    class KVMeta {
-        void *buf_;
-    public:
-        KVMeta(void *buf) : buf_(buf) {}
+    struct KVMeta {
+        typedef timespec meta_t;
 
-        uint32_t seq();
+        int fd_;
+        meta_t seq_;
+        size_t size_;
 
-        uint32_t next();
+        static KVMeta seq(int fd);
 
-        static KVMeta* get(const char* name);
+        void next();
 
-        static void init(void* buf, size_t size);
+        void update(const struct stat &st);
+
+        bool operator==(const KVMeta &rhs) const;
+
+        bool operator!=(const KVMeta &rhs) const;
     };
 }
 

@@ -23,6 +23,8 @@ namespace nokv {
 
     void KV::flush() {
         ::msync(buf_, map_.capacity(), MS_SYNC);
+        // todo remove to trans
+        meta_.next();
     }
 
     void KV::close() {
@@ -92,12 +94,6 @@ namespace nokv {
             return nullptr;
         }
 
-        KVMeta *meta = KVMeta::get(name);
-        if (meta == nullptr) {
-            LOGI("open %s's meta file failed", file);
-            return nullptr;
-        }
-
         bool new_file = st.st_size == 0;
         if (new_file) {
             size_t size = getpagesize();
@@ -112,6 +108,8 @@ namespace nokv {
             return nullptr;
         }
 
+        KVMeta meta = {};
+        meta.update(st);
         KV *kv = new KV(fd, file_lock.release(), meta);
         if (new_file) {
             // todo support unit test only once
@@ -203,26 +201,6 @@ namespace nokv {
         }
 
         gLock = new Lock(fd);
-        ScopedLock<nokv::Lock> file_lock(*gLock);
-        if (stat(file, &st) != 0) {
-            return -1;
-        }
-
-        bool new_file = st.st_size == 0;
-        if (new_file) {
-            size_t size = getpagesize() * 16;
-            st.st_size = size;
-            // avoid BUS error
-            fill_zero(fd, 0, size);
-        }
-
-        void *mem = mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-        if (mem == MAP_FAILED || mem == nullptr) {
-            LOGI("mmap %s failed", file);
-            return -1;
-        }
-
-        KVMeta::init(mem, st.st_size);
         return 0;
     }
 
@@ -307,6 +285,7 @@ namespace nokv {
         if (st.st_size < size) {
             fill_zero(fd_, st.st_size, size - st.st_size);
         } else if (st.st_size > size) {
+            // TODO return direct
             ftruncate(fd_, size);
         }
 
@@ -323,7 +302,6 @@ namespace nokv {
         }
 
         bind_buf(mem, st.st_size);
-        seq_ = meta_->next();
         LOGD("resize to %d", size);
         return 0;
     }
@@ -346,8 +324,8 @@ namespace nokv {
     }
 
     bool KV::reload_if() {
-        uint32_t seq = meta_->seq();
-        if (seq == seq_) {
+        KVMeta meta = KVMeta::seq(fd_);
+        if (meta == meta_) {
             return true;
         }
 
@@ -362,7 +340,7 @@ namespace nokv {
         }
 
         bind_buf(mem, st.st_size);
-        seq_ = seq;
+        meta_.update(st);
         return true;
     }
 }
