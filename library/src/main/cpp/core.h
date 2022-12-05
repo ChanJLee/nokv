@@ -39,12 +39,12 @@ namespace nokv {
         void bind_buf(void *buf, size_t size);
 
     public:
-        void lock() {
-            lock_->lock();
+        void lock(bool share) {
+            lock_->lock(share);
         }
 
-        void unlock() {
-            lock_->unlock();
+        void unlock(bool share) {
+            lock_->unlock(share);
         }
 
         void flush();

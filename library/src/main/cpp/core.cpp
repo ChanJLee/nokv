@@ -90,7 +90,7 @@ namespace nokv {
         }
 
         std::unique_ptr<Lock> file_lock(new Lock(fd));
-        ScopedLock<nokv::Lock, true> lock(*file_lock.get());
+        ScopedLock<nokv::Lock, false> lock(*file_lock.get());
         struct stat st{};
         if (stat(file, &st) != 0) {
             return nullptr;
@@ -112,7 +112,7 @@ namespace nokv {
 
         KVMeta meta = {};
         meta.update(st);
-        KV *kv = new KV(fd, file_lock.release(), meta);
+        KV *kv = new KV(fd, name, file_lock.release(), meta);
         if (new_file) {
             // todo support unit test only once
             LOGD("init buf");
@@ -125,7 +125,7 @@ namespace nokv {
         if (check_kv(kv)) {
             LOGD("check kv failed: %s", name);
             kv->close();
-            lock.~ScopedLock<nokv::Lock>();
+            lock.~ScopedLock<nokv::Lock, false>();
             delete kv;
             ::remove(file);
             // todo remove meta

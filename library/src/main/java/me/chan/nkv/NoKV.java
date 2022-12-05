@@ -123,4 +123,20 @@ public class NoKV implements SharedPreferences {
 	private static native boolean nativeContains(long ptr, String key);
 
 	private static native Map<String, ?> nativeGetAll(long ptr);
+
+	public static class Builder {
+		private Context mContext;
+		private String mName;
+		private boolean mAllowDirtyRead = false;
+
+		public Builder(Context context, String name) {
+			mContext = context;
+			mName = name;
+		}
+
+		public Builder allowDirtyRead(boolean allow) {
+			mAllowDirtyRead = allow;
+			return this;
+		}
+	}
 }

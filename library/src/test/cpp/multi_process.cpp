@@ -46,7 +46,7 @@ struct MockData {
     {                                                                 \
         if (vec[i].type_ == tag)                                      \
         {                                                             \
-            ScopedLock<KV> lock(*kv);                                 \
+            ScopedLock<KV, false> lock(*kv);                                 \
             kv->put_##type(vec[i].key.c_str(), vec[i].data_.type##_); \
             kv->flush(); \
             continue;                                                 \
@@ -90,7 +90,7 @@ void subprocess(char *argv[], std::vector <MockData> &vec, int start, int end) {
         INSERT_KV(string, 5);
         {
             if (vec[i].type_ == 6) {
-                ScopedLock<KV> lock(*kv);
+                ScopedLock<KV, false> lock(*kv);
                 kv->put_null(vec[i].key.c_str());
                 continue;
             }
