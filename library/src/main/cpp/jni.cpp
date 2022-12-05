@@ -29,7 +29,7 @@ JNIEXPORT jboolean JNICALL
 Java_me_chan_nkv_NoKV_nativeContains(JNIEnv *env, jclass clazz, jlong ptr, jstring key) {
     auto kv = (nokv::KV *) ptr;
     DEF_C_STR(env, key, k);
-    nokv::ScopedLock<nokv::KV> lock(*kv);
+    nokv::ScopedLock<nokv::KV, true> lock(*kv);
     return kv->contains(k) == 0;
 }
 
@@ -41,7 +41,7 @@ Java_me_chan_nkv_NoKV_nativeGetInt(JNIEnv *env, jclass clazz, jlong ptr, jstring
     DEF_C_STR(env, key, k);
     nokv::kv_int32_t v = 0;
 
-    nokv::ScopedLock<nokv::KV> lock(*kv);
+    nokv::ScopedLock<nokv::KV, true> lock(*kv);
     if (kv->get_int32(k, v)) {
         return def_value;
     }
@@ -56,7 +56,7 @@ Java_me_chan_nkv_NoKV_nativeGetBoolean(JNIEnv *env, jclass clazz, jlong ptr, jst
     DEF_C_STR(env, key, k);
     nokv::kv_boolean_t v = false;
 
-    nokv::ScopedLock<nokv::KV> lock(*kv);
+    nokv::ScopedLock<nokv::KV, true> lock(*kv);
     if (kv->get_boolean(k, v)) {
         return def_value;
     }
@@ -70,7 +70,7 @@ Java_me_chan_nkv_NoKV_nativeGetLong(JNIEnv *env, jclass clazz, jlong ptr, jstrin
     auto kv = (nokv::KV *) ptr;
     DEF_C_STR(env, key, k);
     nokv::kv_int64_t v = 0;
-    nokv::ScopedLock<nokv::KV> lock(*kv);
+    nokv::ScopedLock<nokv::KV, true> lock(*kv);
 
     if (kv->get_int64(k, v)) {
         return def_value;
@@ -86,7 +86,7 @@ Java_me_chan_nkv_NoKV_nativeGetFloat(JNIEnv *env, jclass clazz, jlong ptr, jstri
     DEF_C_STR(env, key, k);
     nokv::kv_float_t v = 0;
 
-    nokv::ScopedLock<nokv::KV> lock(*kv);
+    nokv::ScopedLock<nokv::KV, true> lock(*kv);
     if (kv->get_float(k, v)) {
         return def_value;
     }
@@ -101,7 +101,7 @@ Java_me_chan_nkv_NoKV_nativeGetString(JNIEnv *env, jclass clazz, jlong ptr, jstr
     DEF_C_STR(env, key, k);
 
     nokv::kv_string_t v = {};
-    nokv::ScopedLock<nokv::KV> lock(*kv);
+    nokv::ScopedLock<nokv::KV, true> lock(*kv);
 
     int code = 0;
     if ((code = kv->get_string(k, v)) < 0) {
@@ -224,7 +224,7 @@ Java_me_chan_nkv_NoKV_nativeGetAll(JNIEnv *env, jclass clazz, jlong ptr) {
                                             "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
     jobject map = env->NewObject(map_clazz, ctor);
 
-    nokv::ScopedLock<nokv::KV> lock(*kv);
+    nokv::ScopedLock<nokv::KV, true> lock(*kv);
     kv->read_all([&](const char *const key, nokv::Entry *entry) {
         nokv::kv_type_t type = entry->type();
         if (type == nokv::TYPE_NULL) {
