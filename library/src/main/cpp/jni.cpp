@@ -3,6 +3,16 @@
 #include "scoped_str.h"
 #include "lock.h"
 
+#define AS_STR(type) #type
+
+#define TO_BOX_TYPE(type, sym_type) \
+    jclass type##_clazz = env->FindClass("java/lang/" AS_STR(type)); \
+    jmethodID type##_valueof = env->GetStaticMethodID(type##_clazz, "valueOf", "(" AS_STR(sym_type) ")Ljava/lang/"  AS_STR(type) ";");
+
+#define FROM_BOX_TYPE(type, sym_type, t2) \
+        jclass type##_clazz = env->FindClass("java/lang/" AS_STR(type)); \
+        jmethodID type##_value = env->GetMethodID(type##_clazz, AS_STR(t2) "Value", "()" AS_STR(sym_type));
+
 extern "C"
 JNIEXPORT jlong JNICALL
 Java_me_chan_nkv_NoKV_nativeCreate(JNIEnv *env, jclass clazz, jstring kv) {
@@ -114,14 +124,15 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_me_chan_nkv_NoKvEditor_nativeBeginTransaction(JNIEnv *env, jclass clazz, jlong ptr) {
     auto kv = (nokv::KV *) ptr;
-    kv->lock();
+    kv->lock(false);
 }
 
 extern "C"
 JNIEXPORT void JNICALL
 Java_me_chan_nkv_NoKvEditor_nativeEndTransaction(JNIEnv *env, jclass clazz, jlong ptr) {
     auto kv = (nokv::KV *) ptr;
-    kv->unlock();
+    kv->flush();
+    kv->unlock(false);
 }
 
 extern "C"
@@ -167,8 +178,13 @@ Java_me_chan_nkv_NoKvEditor_nativePutStringSet(JNIEnv *env, jclass clazz, jlong 
     }
 
     int code = kv->put_array(k, array);
-    nokv::kv_array_t::free(array);
 
+    FROM_BOX_TYPE(Boolean, Z, boolean)
+    FROM_BOX_TYPE(Integer, I, int)
+    FROM_BOX_TYPE(Float, F, float)
+    FROM_BOX_TYPE(Long, J, long)
+
+    nokv::kv_array_t::free(array);
     // TODO: implement nativePutStringSet()
     return code == 0;
 }
@@ -223,6 +239,10 @@ Java_me_chan_nkv_NoKV_nativeGetAll(JNIEnv *env, jclass clazz, jlong ptr) {
     jmethodID put_method = env->GetMethodID(map_clazz, "put",
                                             "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
     jobject map = env->NewObject(map_clazz, ctor);
+    TO_BOX_TYPE(Boolean, Z)
+    TO_BOX_TYPE(Integer, I)
+    TO_BOX_TYPE(Float, F)
+    TO_BOX_TYPE(Long, J)
 
     nokv::ScopedLock<nokv::KV, true> lock(*kv);
     kv->read_all([&](const char *const key, nokv::Entry *entry) {
@@ -230,17 +250,27 @@ Java_me_chan_nkv_NoKV_nativeGetAll(JNIEnv *env, jclass clazz, jlong ptr) {
         if (type == nokv::TYPE_NULL) {
             env->CallObjectMethod(map, put_method, env->NewStringUTF(key), nullptr);
         } else if (type == nokv::TYPE_INT32) {
-            env->CallObjectMethod(map, put_method, env->NewStringUTF(key),);
+            env->CallObjectMethod(map, put_method, env->NewStringUTF(key),
+                                  env->CallStaticIntMethod(Integer_clazz, Integer_valueof,
+                                                           entry->as_int32()));
         } else if (type == nokv::TYPE_FLOAT) {
-            env->CallObjectMethod(map, put_method, env->NewStringUTF(key),);
+            env->CallObjectMethod(map, put_method, env->NewStringUTF(key),
+                                  env->CallStaticFloatMethod(Float_clazz, Float_valueof,
+                                                             entry->as_float()));
         } else if (type == nokv::TYPE_INT64) {
-            env->CallObjectMethod(map, put_method, env->NewStringUTF(key),);
+            env->CallObjectMethod(map, put_method, env->NewStringUTF(key),
+                                  env->CallStaticLongMethod(Long_clazz, Long_valueof,
+                                                            entry->as_int64()));
         } else if (type == nokv::TYPE_BOOLEAN) {
-            env->CallObjectMethod(map, put_method, env->NewStringUTF(key),);
+            env->CallObjectMethod(map, put_method, env->NewStringUTF(key),
+                                  env->CallStaticBooleanMethod(Boolean_clazz, Boolean_valueof,
+                                                               entry->as_boolean()));
         } else if (type == nokv::TYPE_STRING) {
-            env->CallObjectMethod(map, put_method, env->NewStringUTF(key),);
+            env->CallObjectMethod(map, put_method, env->NewStringUTF(key),
+                                  env->NewStringUTF(entry->as_string().str_));
         } else if (type == nokv::TYPE_ARRAY) {
-            env->CallObjectMethod(map, put_method, env->NewStringUTF(key),);
+            // todo
+            env->CallObjectMethod(map, put_method, env->NewStringUTF(key), nullptr);
         }
     });
     return map;
