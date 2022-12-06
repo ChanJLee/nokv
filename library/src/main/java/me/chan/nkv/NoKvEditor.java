@@ -99,8 +99,8 @@ class NoKvEditor implements SharedPreferences.Editor {
 					if (!nativePutString(mPtr, key, (String) value)) {
 						return false;
 					}
-				} else if (value instanceof Set) {
-					if (!nativePutStringSet(mPtr, key, (Set<String>) value)) {
+				} else if (value instanceof Boolean) {
+					if (!nativePutBoolean(mPtr, key, (Boolean) value)) {
 						return false;
 					}
 				} else if (value instanceof Integer) {
@@ -115,11 +115,12 @@ class NoKvEditor implements SharedPreferences.Editor {
 					if (!nativePutFloat(mPtr, key, (Float) value)) {
 						return false;
 					}
-				} else if (value instanceof Boolean) {
-					if (!nativePutBoolean(mPtr, key, (Boolean) value)) {
+				} else if (value instanceof Set) {
+					if (!nativePutStringSet(mPtr, key, (Set<String>) value)) {
 						return false;
 					}
 				}
+				// todo unknown
 			}
 		} finally {
 			nativeEndTransaction(mPtr);

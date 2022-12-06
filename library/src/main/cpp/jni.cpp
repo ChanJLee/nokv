@@ -10,10 +10,6 @@
     jclass type##_clazz = env->FindClass("java/lang/" AS_STR(type)); \
     jmethodID type##_valueof = env->GetStaticMethodID(type##_clazz, "valueOf", "(" AS_STR(sym_type) ")Ljava/lang/"  AS_STR(type) ";");
 
-#define FROM_BOX_TYPE(type, sym_type, t2) \
-        jclass type##_clazz = env->FindClass("java/lang/" AS_STR(type)); \
-        jmethodID type##_value = env->GetMethodID(type##_clazz, AS_STR(t2) "Value", "()" AS_STR(sym_type));
-
 extern "C"
 JNIEXPORT jlong JNICALL
 Java_me_chan_nkv_NoKV_nativeCreate(JNIEnv *env, jclass clazz, jstring kv) {
@@ -122,6 +118,48 @@ Java_me_chan_nkv_NoKV_nativeGetString(JNIEnv *env, jclass clazz, jlong ptr, jstr
 }
 
 extern "C"
+JNIEXPORT jobject JNICALL
+Java_me_chan_nkv_NoKV_nativeGetStringSet(JNIEnv *env, jclass clazz, jlong ptr, jstring key,
+                                         jobject def_values) {
+    auto kv = (nokv::KV *) ptr;
+    DEF_C_STR(env, key, k);
+
+    nokv::kv_array_t v = {};
+    nokv::ScopedLock<nokv::KV, true> lock(*kv);
+
+    int code = 0;
+    if ((code = kv->get_array(k, v)) < 0) {
+        return def_values;
+    }
+
+    if (code == nokv::VALUE_NULL) {
+        return nullptr;
+    }
+
+    jclass set_clazz = env->FindClass("java/util/HashSet");
+    jmethodID set_ctor = env->GetMethodID(set_clazz, "<init>", "()V");
+    jmethodID add_method = env->GetMethodID(env->FindClass("java/util/Set"), "add",
+                                            "(Ljava/lang/Object;)Z");
+
+    jobject set = env->NewObject(set_clazz, set_ctor);
+    nokv::kv_array_t::iterator it = v.it();
+    nokv::Entry ent;
+    while (it.next(&ent)) {
+        auto t = ent.type();
+        if (t == nokv::TYPE_NULL) {
+            env->CallBooleanMethod(set, add_method, (jobject) nullptr);
+        } else if (t == nokv::TYPE_STRING) {
+            env->CallBooleanMethod(set, add_method,
+                                   env->NewStringUTF(ent.as_string().str_));
+        } else {
+            // todo invalid state
+            LOGD("read map invalid state");
+        }
+    }
+    return set;
+}
+
+extern "C"
 JNIEXPORT void JNICALL
 Java_me_chan_nkv_NoKvEditor_nativeBeginTransaction(JNIEnv *env, jclass clazz, jlong ptr) {
     auto kv = (nokv::KV *) ptr;
@@ -173,20 +211,35 @@ Java_me_chan_nkv_NoKvEditor_nativePutStringSet(JNIEnv *env, jclass clazz, jlong 
     auto kv = (nokv::KV *) ptr;
     DEF_C_STR(env, key, k);
 
+    if (value == nullptr) {
+        return kv->put_null(k) == 0;
+    }
+
     nokv::kv_array_t array = {};
     if (nokv::kv_array_t::create(array)) {
         return false;
     }
 
+    jclass set_clazz = env->FindClass("java/util/Set");
+    jclass it_clazz = env->FindClass("java/util/Iterator");
+    jmethodID iterator_method = env->GetMethodID(set_clazz, "iterator", "()Ljava/util/Iterator;");
+    jmethodID hasNext_method = env->GetMethodID(it_clazz, "hasNext", "()Z");
+    jmethodID next_method = env->GetMethodID(it_clazz, "next", "()Ljava/lang/Object;");
+
+    jobject it = env->CallObjectMethod(value, iterator_method);
+    while (env->CallBooleanMethod(it, hasNext_method)) {
+        jobject elem = env->CallObjectMethod(it, next_method);
+        if (elem != nullptr) {
+            jstring js = static_cast<jstring>(elem);
+            DEF_C_STR(env, js, s);
+            array.put_string(s);
+        } else {
+            array.put_null();
+        }
+    }
+
     int code = kv->put_array(k, array);
-
-    FROM_BOX_TYPE(Boolean, Z, boolean)
-    FROM_BOX_TYPE(Integer, I, int)
-    FROM_BOX_TYPE(Float, F, float)
-    FROM_BOX_TYPE(Long, J, long)
-
     nokv::kv_array_t::free(array);
-    // TODO: implement nativePutStringSet()
     return code == 0;
 }
 
@@ -254,7 +307,7 @@ Java_me_chan_nkv_NoKV_nativeGetAll(JNIEnv *env, jclass clazz, jlong ptr) {
     kv->read_all([&](const char *const key, nokv::Entry *entry) {
         nokv::kv_type_t type = entry->type();
         if (type == nokv::TYPE_NULL) {
-            env->CallObjectMethod(map, put_method, env->NewStringUTF(key), nullptr);
+            env->CallObjectMethod(map, put_method, env->NewStringUTF(key), (jobject) nullptr);
         } else if (type == nokv::TYPE_INT32) {
             env->CallObjectMethod(map, put_method, env->NewStringUTF(key),
                                   env->CallStaticIntMethod(Integer_clazz, Integer_valueof,
@@ -282,7 +335,7 @@ Java_me_chan_nkv_NoKV_nativeGetAll(JNIEnv *env, jclass clazz, jlong ptr) {
             while (it.next(&ent)) {
                 auto t = ent.type();
                 if (t == nokv::TYPE_NULL) {
-                    env->CallBooleanMethod(set, add_method, nullptr);
+                    env->CallBooleanMethod(set, add_method, (jobject) nullptr);
                 } else if (t == nokv::TYPE_STRING) {
                     env->CallBooleanMethod(set, add_method,
                                            env->NewStringUTF(ent.as_string().str_));

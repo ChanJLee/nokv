@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import androidx.annotation.Nullable;
 
 import java.io.File;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -36,6 +37,7 @@ public class NoKV implements SharedPreferences {
 	}
 
 	private final long mPtr;
+	private Set<OnSharedPreferenceChangeListener> mListeners;
 
 	private NoKV(long ptr) {
 		mPtr = ptr;
@@ -55,7 +57,7 @@ public class NoKV implements SharedPreferences {
 	@Nullable
 	@Override
 	public Set<String> getStringSet(String key, @Nullable Set<String> defValues) {
-		return null;
+		return nativeGetStringSet(mPtr, key, defValues);
 	}
 
 	@Override
@@ -89,13 +91,20 @@ public class NoKV implements SharedPreferences {
 	}
 
 	@Override
-	public void registerOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener listener) {
-		// todo
+	public synchronized void registerOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener listener) {
+		if (mListeners == null) {
+			mListeners = new HashSet<>();
+		}
+		mListeners.add(listener);
 	}
 
 	@Override
-	public void unregisterOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener listener) {
+	public synchronized void unregisterOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener listener) {
 		// todo
+		if (mListeners == null) {
+			mListeners = new HashSet<>();
+		}
+		mListeners.remove(listener);
 	}
 
 	@Override
@@ -124,19 +133,5 @@ public class NoKV implements SharedPreferences {
 
 	private static native Map<String, ?> nativeGetAll(long ptr);
 
-	public static class Builder {
-		private Context mContext;
-		private String mName;
-		private boolean mAllowDirtyRead = false;
-
-		public Builder(Context context, String name) {
-			mContext = context;
-			mName = name;
-		}
-
-		public Builder allowDirtyRead(boolean allow) {
-			mAllowDirtyRead = allow;
-			return this;
-		}
-	}
+	private static native Set<String> nativeGetStringSet(long ptr, String key, Set<String> defValues);
 }
