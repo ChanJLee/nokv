@@ -3,6 +3,7 @@ package me.chan.nkv;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -21,8 +22,10 @@ public class NoKV implements SharedPreferences {
 
 	public static Context init(Context baseContext) {
 		sContext = baseContext;
+		e("context: "  + baseContext);
 		File ws = baseContext.getDir("nokv", Context.MODE_PRIVATE);
 		if (nativeInit(ws.getAbsolutePath()) != 0) {
+			e("init nokv failed");
 			return baseContext;
 		}
 		return new ProxyContext(baseContext);
@@ -134,4 +137,8 @@ public class NoKV implements SharedPreferences {
 	private static native Map<String, ?> nativeGetAll(long ptr);
 
 	private static native Set<String> nativeGetStringSet(long ptr, String key, Set<String> defValues);
+
+	private static void e(String msg) {
+		Log.e("NoKV", msg);
+	}
 }
