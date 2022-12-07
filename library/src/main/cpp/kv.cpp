@@ -18,8 +18,11 @@ namespace nokv {
                 return 2;
             case nokv::TYPE_INT64:
                 return 9;
-            case nokv::TYPE_STRING:
-                return strlen((char *) entry + 1) + 2;
+            case nokv::TYPE_STRING: {
+                int32_t size = 0;
+                memcpy(&size, entry + 1, sizeof(size));
+                return 4 /* str len */ + size + 1 /* \0 */ + 1 /* tag */;
+            }
             case nokv::TYPE_NULL:
                 return 1;
             case nokv::TYPE_ARRAY: {
@@ -39,7 +42,8 @@ namespace nokv {
         }
 
         if (entry->type_ == TYPE_STRING) {
-            entry->data_.string_.str_ = (const char *) (stream + 1);
+            memcpy(&entry->data_.string_.size_, ++stream, 4);
+            entry->data_.string_.str_ = (const char *) (stream + 4);
             return 0;
         }
 
@@ -76,6 +80,7 @@ namespace nokv {
         return 0;
     }
 
+    // todo refactor key to kv_string_t.
     int kv_array_t::put_string(const kv_string_t &str) {
         size_t str_len = strlen(str.str_) + 1;
         if (end_ + str_len + 1/* tag */> begin_ + capacity_) {

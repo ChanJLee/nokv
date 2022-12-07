@@ -311,6 +311,7 @@ namespace nokv {
 
     int KV::put_string(const char *const key, const char *str) {
         nokv::kv_string_t s = {
+                .size_ = strlen(key),
                 .str_ = str
         };
         return put_string(key, s);

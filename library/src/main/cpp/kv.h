@@ -34,6 +34,7 @@ namespace nokv {
     typedef int64_t kv_int64_t;
 
     struct kv_string_t {
+        size_t size_;
         const char *str_;
     };
 

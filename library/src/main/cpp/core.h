@@ -6,8 +6,8 @@
 #define NKV_CORE_H
 
 #include "lock.h"
-#include "kv.h"
-#include "meta.h"
+#include "kv.h" /* todo hide */
+#include "meta.h" /* todo hide */
 #include <string>
 #include <functional>
 
@@ -39,6 +39,7 @@ namespace nokv {
 
         void bind_buf(void *buf, size_t size);
 
+        int put_string(const char *const, const kv_string_t &);
     public:
         void lock(bool share) {
             lock_->lock(share);
@@ -89,13 +90,11 @@ namespace nokv {
 
         int get_float(const char *const, kv_float_t &);
 
-        int get_string(const char *const, kv_string_t &);
+        int get_string(const char *const, const char* &);
 
         int get_array(const char *const, kv_array_t &);
 
         int put_string(const char *const, const char *);
-
-        int put_string(const char *const, const kv_string_t &);
     };
 }
 
