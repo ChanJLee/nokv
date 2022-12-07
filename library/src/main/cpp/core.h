@@ -19,6 +19,7 @@ namespace nokv {
         byte_t *buf_;
         KVMeta meta_;
         std::string name_;
+        uint32_t crc_;
 
         KV(int fd, const char *name, Lock *lock, const nokv::KVMeta &meta) : lock_(lock), fd_(fd),
                                                                              map_(),

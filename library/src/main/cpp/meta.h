@@ -21,9 +21,9 @@ namespace nokv {
 
         static KVMeta seq(int fd);
 
-        void next();
+        void next(size_t size);
 
-        void update(const struct stat &st);
+        void update(int fd, const struct stat &st);
 
         bool operator==(const KVMeta &rhs) const;
 

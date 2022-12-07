@@ -25,11 +25,11 @@ namespace nokv {
         };
         struct stat st = {};
         fstat(fd, &st);
-        meta.update(st);
+        meta.update(fd, st);
         return meta;
     }
 
-    void KVMeta::next() {
+    void KVMeta::next(size_t size) {
         struct timespec ts;
         clock_gettime(CLOCK_REALTIME, &ts);
         if (seq_.tv_sec == ts.tv_sec) {
@@ -37,10 +37,13 @@ namespace nokv {
             return;
         }
         seq_ = ts;
+        futimens(fd_, &ts);
+        size_ = size;
     }
 
-    void KVMeta::update(const struct stat &st) {
+    void KVMeta::update(int fd, const struct stat &st) {
         seq_ = st.st_mtim;
         size_ = st.st_size;
+        fd_ = fd;
     }
 }

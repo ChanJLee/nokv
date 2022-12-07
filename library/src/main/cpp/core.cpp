@@ -26,7 +26,8 @@ namespace nokv {
     void KV::flush() {
         ::msync(buf_, map_.capacity(), MS_SYNC);
         // todo remove to trans
-        meta_.next();
+        meta_.next(map_.capacity());
+        crc_ = map_.crc();
     }
 
     void KV::close() {
@@ -111,7 +112,7 @@ namespace nokv {
         }
 
         KVMeta meta = {};
-        meta.update(st);
+        meta.update(fd, st);
         KV *kv = new KV(fd, name, file_lock.release(), meta);
         if (new_file) {
             // todo support unit test only once
@@ -318,16 +319,23 @@ namespace nokv {
     void KV::init_buf(void *buf, size_t size) {
         buf_ = static_cast<byte_t *>(buf);
         map_.init(buf_, size);
+        crc_ = map_.crc();
     }
 
     void KV::bind_buf(void *buf, size_t size) {
         buf_ = static_cast<byte_t *>(buf);
         map_.bind(buf_, size);
+        crc_ = map_.crc();
     }
 
     bool KV::reload_if() {
         KVMeta meta = KVMeta::seq(fd_);
         if (meta == meta_) {
+            return true;
+        }
+
+        if (crc_ == map_.crc()) {
+            meta_ = meta;
             return true;
         }
 
@@ -344,7 +352,7 @@ namespace nokv {
 
         LOGD("reload");
         bind_buf(mem, st.st_size);
-        meta_.update(st);
+        meta_.update(fd_, st);
         return true;
     }
 }
