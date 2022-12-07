@@ -20,15 +20,12 @@ public class NoKV implements SharedPreferences {
 	@SuppressLint("StaticFieldLeak")
 	private static Context sContext;
 
-	public static Context init(Context baseContext) {
-		sContext = baseContext;
-		e("context: "  + baseContext);
-		File ws = baseContext.getDir("nokv", Context.MODE_PRIVATE);
+	public static void init(Context context) {
+		sContext = context;
+		File ws = context.getDir("nokv", Context.MODE_PRIVATE);
 		if (nativeInit(ws.getAbsolutePath()) != 0) {
 			e("init nokv failed");
-			return baseContext;
 		}
-		return new ProxyContext(baseContext);
 	}
 
 	public static SharedPreferences create(String name, int mode) {
@@ -103,7 +100,6 @@ public class NoKV implements SharedPreferences {
 
 	@Override
 	public synchronized void unregisterOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener listener) {
-		// todo
 		if (mListeners == null) {
 			mListeners = new HashSet<>();
 		}
