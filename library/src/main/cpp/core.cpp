@@ -342,6 +342,7 @@ namespace nokv {
             return false;
         }
 
+        LOGD("reload");
         bind_buf(mem, st.st_size);
         meta_.update(st);
         return true;

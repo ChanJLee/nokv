@@ -206,6 +206,7 @@ namespace nokv {
     }
 
     int Map::get_value(const char *const key, byte_t **ret) {
+        // todo opt
         int code = ERROR_NOT_FOUND;
         read_all(
                 [&](const char *entry_key, size_t key_len, byte_t *body, size_t body_len) -> int {

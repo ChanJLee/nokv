@@ -67,6 +67,6 @@ public class MainActivity extends AppCompatActivity {
 				ts2 = SystemClock.elapsedRealtime();
 				Log.d("NoKV", "nokv read: " + (ts2 - ts));
 			}
-		}).start();
+		}, "FuckOff").start();
 	}
 }
