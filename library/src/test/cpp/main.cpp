@@ -65,7 +65,6 @@ int main(int argc, char *argv[]) {
                     if (item.type() == nokv::TYPE_STRING) {
                         const char *v = item.as_string().str_;
                         printf("%s,", v);
-                        break;
                     } else if (item.type() == nokv::TYPE_NULL) {
                         printf("null,");
                     }
