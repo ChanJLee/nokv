@@ -102,8 +102,6 @@ namespace nokv {
         }
         end_[0] = TYPE_NULL;
         end_ = end_ + 1;
-        uint32_t size = end_ - begin_;
-        memcpy(begin_, &size, 4);
         return 0;
     }
 
