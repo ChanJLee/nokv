@@ -141,7 +141,26 @@ namespace nokv {
         uint32_t capacity_;
         byte_t *begin_;
         byte_t *buf_;
-        std::unordered_map<const char *, byte_t *> lru_;
+
+        template<class _Tp>
+        struct predicate : public std::binary_function<_Tp, _Tp, bool> {
+            bool operator()(const _Tp &__x, const _Tp &__y) const { return strcmp(__x, __y) == 0; }
+        };
+
+        struct hash {
+            int operator()(const char *str) const {
+                int seed = 131;//31  131 1313 13131131313 etc//
+                int hash = 0;
+                while (*str) {
+                    hash = (hash * seed) + (*str);
+                    str++;
+                }
+
+                return hash & (0x7FFFFFFF);
+            }
+        };
+
+        std::unordered_map<const char *, byte_t *, hash, predicate<const char *>> lru_;
     public:
         // 初始化一块内存
         void init(byte_t *buf, uint32_t size) {

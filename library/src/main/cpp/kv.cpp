@@ -504,6 +504,7 @@ namespace nokv {
             int entry_size = Entry::get_entry_size(data);
             if (entry_size < 0) {
                 /* invalid state */
+                LOGD("invalid state");
                 return ERROR_INVALID_STATE;
             }
 
