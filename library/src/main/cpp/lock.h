@@ -8,11 +8,32 @@
 #include <shared_mutex>
 
 namespace nokv {
-    class Lock {
-        int fd_;
+
+    class ThreadLock {
         std::shared_mutex thread_lock_;
     public:
-        Lock(int fd) : fd_(fd), thread_lock_() {}
+        ThreadLock() {};
+
+        void lock(bool share);
+
+        void unlock(bool share);
+    };
+
+    class ProcessLock {
+        int fd_;
+    public:
+        ProcessLock(int fd) : fd_(fd) {};
+
+        void lock(bool share);
+
+        void unlock(bool share);
+    };
+
+    class Lock {
+        ThreadLock thread_lock_;
+        ProcessLock process_lock_;
+    public:
+        Lock(int fd) : process_lock_(fd), thread_lock_() {}
 
         void lock(bool share);
 
