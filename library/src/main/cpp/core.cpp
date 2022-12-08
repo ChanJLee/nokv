@@ -149,18 +149,10 @@ namespace nokv {
 
     int
     KV::read_all(const std::function<void(const kv_string_t &, Entry *)> &fnc) {
-        if (!reload_if()) {
-            return ERROR_MAP_FAILED;
-        }
-
         return map_.read_all(fnc);
     }
 
     int KV::contains(const char *const key) {
-        if (!reload_if()) {
-            return ERROR_MAP_FAILED;
-        }
-
         kv_string_t kv_key{
                 .size_ = (uint32_t) strlen(key),
                 .str_ = key
@@ -169,24 +161,16 @@ namespace nokv {
     }
 
     int KV::remove_all() {
-        if (!reload_if()) {
-            return ERROR_MAP_FAILED;
-        }
-
         int code = map_.remove_all();
         if (code != 0) {
             return code;
         }
         /* ignore rtn code */
-        resize(getpagesize());
+        // resize(getpagesize());
         return 0;
     }
 
     int KV::remove(const char *const key) {
-        if (!reload_if()) {
-            return ERROR_MAP_FAILED;
-        }
-
         kv_string_t kv_key{
                 .size_ = (uint32_t) strlen(key),
                 .str_ = key
@@ -218,9 +202,6 @@ namespace nokv {
 
 #define DEFINE_PUT(type) \
     int KV::put_##type(const char *const key, const kv_##type##_t &v) { \
-        if (!reload_if()) {  \
-            return ERROR_MAP_FAILED; \
-        } \
         kv_string_t kv_key{ \
             .size_ =(uint32_t) strlen(key), \
             .str_ = key \
@@ -253,10 +234,6 @@ namespace nokv {
     DEFINE_PUT(array)
 
     int KV::put_null(const char *const key) {
-        if (!reload_if()) {
-            return ERROR_MAP_FAILED;
-        }
-
         kv_string_t kv_key{
                 .size_ = (uint32_t) strlen(key),
                 .str_ = key
@@ -277,9 +254,6 @@ namespace nokv {
 
 #define DEFINE_GET(type) \
     int KV::get_##type(const char * key, kv_##type##_t &ret) { \
-        if (!reload_if()) {                                         \
-            return ERROR_MAP_FAILED;             \
-        }                \
         kv_string_t kv_key { \
             .size_ =(uint32_t)strlen(key), \
             .str_ = key \
@@ -377,10 +351,6 @@ namespace nokv {
     }
 
     int KV::get_string(const char *key, const char *&str) {
-        if (!reload_if()) {
-            return ERROR_MAP_FAILED;
-        }
-
         kv_string_t kv_key{
                 .size_ = (uint32_t) strlen(key),
                 .str_ = key

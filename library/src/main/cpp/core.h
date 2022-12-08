@@ -33,8 +33,6 @@ namespace nokv {
 
         int resize(size_t size);
 
-        bool reload_if();
-
         void init_buf(void *buf, size_t size);
 
         void bind_buf(void *buf, size_t size);
@@ -48,6 +46,8 @@ namespace nokv {
         void unlock(bool share) {
             lock_->unlock(share);
         }
+
+        bool reload_if();
 
         void flush();
 

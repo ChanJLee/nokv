@@ -72,7 +72,10 @@ class NoKvEditor implements SharedPreferences.Editor {
 
 	@Override
 	public boolean commit() {
-		nativeBeginTransaction(mPtr);
+		if (!nativeBeginTransaction(mPtr)) {
+			return false;
+		}
+
 		try {
 			if (mClear && !nativeClear(mPtr)) {
 				return false;
@@ -135,7 +138,7 @@ class NoKvEditor implements SharedPreferences.Editor {
 		commit();
 	}
 
-	private static native void nativeBeginTransaction(long ptr);
+	private static native boolean nativeBeginTransaction(long ptr);
 
 	private static native void nativeEndTransaction(long ptr);
 

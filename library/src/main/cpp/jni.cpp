@@ -160,10 +160,11 @@ Java_me_chan_nkv_NoKV_nativeGetStringSet(JNIEnv *env, jclass clazz, jlong ptr, j
 }
 
 extern "C"
-JNIEXPORT void JNICALL
+JNIEXPORT jboolean JNICALL
 Java_me_chan_nkv_NoKvEditor_nativeBeginTransaction(JNIEnv *env, jclass clazz, jlong ptr) {
     auto kv = (nokv::KV *) ptr;
     kv->lock(false);
+    return kv->reload_if();
 }
 
 extern "C"
