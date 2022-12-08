@@ -28,7 +28,7 @@ namespace nokv {
             case nokv::TYPE_ARRAY: {
                 int32_t size = 0;
                 memcpy(&size, entry + 1, sizeof(size));
-                return size + 1;
+                return size + 1 + 4;
             }
         }
 

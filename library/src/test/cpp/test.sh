@@ -1,5 +1,6 @@
 make || exit $?
 
+rm -rf out
 mkdir out
 ./main `pwd`/out demo
 
