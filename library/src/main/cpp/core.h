@@ -56,7 +56,7 @@ namespace nokv {
         size_t size() const { return map_.size(); }
 
         int read_all(
-                const std::function<void(const char *const, Entry *)> &fnc);
+                const std::function<void(const kv_string_t &, Entry *)> &fnc);
 
         int contains(const char *const key);
 
@@ -68,33 +68,33 @@ namespace nokv {
 
         int remove_all();
 
-        int remove(const char *const key);
+        int remove(const char *);
 
-        int put_boolean(const char *const, const kv_boolean_t &);
+        int put_boolean(const char *, const kv_boolean_t &);
 
-        int put_int32(const char *const, const kv_int32_t &);
+        int put_int32(const char *, const kv_int32_t &);
 
-        int put_int64(const char *const, const kv_int64_t &);
+        int put_int64(const char *, const kv_int64_t &);
 
-        int put_float(const char *const, const kv_float_t &);
+        int put_float(const char *, const kv_float_t &);
 
-        int put_array(const char *const, const kv_array_t &);
+        int put_array(const char *, const kv_array_t &);
 
-        int put_null(const char *const);
+        int put_null(const char *);
 
-        int get_boolean(const char *const, kv_boolean_t &);
+        int get_boolean(const char *, kv_boolean_t &);
 
-        int get_int32(const char *const, kv_int32_t &);
+        int get_int32(const char *, kv_int32_t &);
 
-        int get_int64(const char *const, kv_int64_t &);
+        int get_int64(const char *, kv_int64_t &);
 
-        int get_float(const char *const, kv_float_t &);
+        int get_float(const char *, kv_float_t &);
 
-        int get_string(const char *const, const char* &);
+        int get_string(const char *, const char *&);
 
-        int get_array(const char *const, kv_array_t &);
+        int get_array(const char *, kv_array_t &);
 
-        int put_string(const char *const, const char *);
+        int put_string(const char *, const char *);
     };
 }
 

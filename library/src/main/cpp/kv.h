@@ -34,8 +34,14 @@ namespace nokv {
     typedef int64_t kv_int64_t;
 
     struct kv_string_t {
-        size_t size_;
+        uint32_t size_;
         const char *str_;
+
+        int to_stream(byte_t *stream) const;
+
+        static int from_stream(byte_t *stream, kv_string_t *str);
+
+        size_t byte_size() const { return size_ + sizeof(size_) + 1; }
     };
 
     struct Entry;
@@ -153,50 +159,54 @@ namespace nokv {
 
         uint32_t crc() const { return header_.crc_; }
 
-        int put_boolean(const char *const, const kv_boolean_t &);
+        int put_boolean(const kv_string_t &, const kv_boolean_t &);
 
-        int put_int32(const char *const, const kv_int32_t &);
+        int put_int32(const kv_string_t &, const kv_int32_t &);
 
-        int put_int64(const char *const, const kv_int64_t &);
+        int put_int64(const kv_string_t &, const kv_int64_t &);
 
-        int put_float(const char *const, const kv_float_t &);
+        int put_float(const kv_string_t &, const kv_float_t &);
 
-        int put_string(const char *const, const kv_string_t &);
+        int put_string(const kv_string_t &, const kv_string_t &);
 
-        int put_array(const char *const, const kv_array_t &);
+        int put_array(const kv_string_t &, const kv_array_t &);
 
-        int put_null(const char *const);
+        int put_null(const kv_string_t &);
 
-        int get_boolean(const char *const, kv_boolean_t &);
+        int get_boolean(const kv_string_t &, kv_boolean_t &);
 
-        int get_int32(const char *const, kv_int32_t &);
+        int get_int32(const kv_string_t &, kv_int32_t &);
 
-        int get_int64(const char *const, kv_int64_t &);
+        int get_int64(const kv_string_t &, kv_int64_t &);
 
-        int get_float(const char *const, kv_float_t &);
+        int get_float(const kv_string_t &, kv_float_t &);
 
-        int get_string(const char *const, kv_string_t &);
+        int get_string(const kv_string_t &, kv_string_t &);
 
-        int get_array(const char *const, kv_array_t &);
+        int get_array(const kv_string_t &, kv_array_t &);
 
-        bool contains(const char *const key);
+        bool contains(const kv_string_t &key);
 
         int read_all(
-                const std::function<void(const char *const, Entry *entry)> &fnc);
+                const std::function<void(const kv_string_t &, Entry *entry)> &fnc);
 
-        int remove(const char *const key);
+        int remove(const kv_string_t &key);
 
         int remove_all();
 
+        void sync();
+
     private:
-        int get_value(const char *const, byte_t **ret);
+        int get_value(const kv_string_t &, byte_t **ret);
 
-        int put_value(const char *const, kv_type_t, byte_t *value, size_t len);
+        int
+        put_value(const kv_string_t &, kv_type_t, const std::function<void(byte_t *)> &, size_t len);
 
-        int put_value(byte_t *where, const char *, kv_type_t, byte_t *value, size_t len);
+        int put_value(byte_t *&where, const kv_string_t &, kv_type_t, byte_t *value, size_t len,
+                      size_t &total);
 
         int read_all(
-                const std::function<int(const char *, size_t, byte_t *, size_t)> &fnc);
+                const std::function<int(const kv_string_t &, byte_t *, size_t)> &fnc);
     };
 }
 

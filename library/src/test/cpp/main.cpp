@@ -10,27 +10,27 @@ int main(int argc, char *argv[]) {
     nokv::KV *kv = nokv::KV::create(argv[2]);
     std::cout << "write" << std::endl;
     kv->put_string("string", "hello world");
-    kv->put_boolean("boolean", true);
-    kv->put_float("float", 3.1415926);
-    kv->put_int32("int32", 123456);
-    kv->put_int64("int64", 12345678912345);
-    kv->put_string("suffix", "====");
-    kv->put_string("string", "hello world2");
-
-    nokv::kv_array_t array;
-    nokv::kv_array_t::create(array);
-
-    array.put_string("a1");
-    array.put_string("a2");
-    array.put_null();
-    array.put_string("a3");
-
-    kv->put_array("array", array);
-    kv->put_string("suffix2", "====");
+//    kv->put_boolean("boolean", true);
+//    kv->put_float("float", 3.1415926);
+//    kv->put_int32("int32", 123456);
+//    kv->put_int64("int64", 0xbabeaaaa);
+//    kv->put_string("suffix", "====");
+//    kv->put_string("string", "hello world2");
+//
+//    nokv::kv_array_t array;
+//    nokv::kv_array_t::create(array);
+//
+//    array.put_string("a1");
+//    array.put_string("a2");
+//    array.put_null();
+//    array.put_string("a3");
+//
+//    kv->put_array("array", array);
+//    kv->put_string("suffix2", "====");
 
     std::cout << "read all, size: " << kv->size() << std::endl;
-    kv->read_all([=](const char *const key, nokv::Entry *entry) {
-        printf("key: %s, value: ", key);
+    kv->read_all([=](const nokv::kv_string_t key, nokv::Entry *entry) {
+        printf("key: %s, value: ", key.str_);
         switch (entry->type()) {
             case nokv::TYPE_INT64: {
                 nokv::kv_int64_t v = entry->as_int64();
