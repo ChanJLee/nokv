@@ -177,7 +177,6 @@ namespace nokv {
             capacity_ = size - sizeof(Header);
             begin_ = buf + sizeof(Header);
             buf_ = buf;
-            lru_.clear();
             build_lru_cache(this->begin(), this->end());
         }
 
