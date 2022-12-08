@@ -107,14 +107,14 @@ Java_me_chan_nkv_NoKV_nativeGetString(JNIEnv *env, jclass clazz, jlong ptr, jstr
     auto kv = (nokv::KV *) ptr;
     DEF_C_STR(env, key, k);
 
-    nokv::kv_string_t v = {};
+    const char *v = {};
     nokv::ScopedLock<nokv::KV, true> lock(*kv);
 
     int code = 0;
     if ((code = kv->get_string(k, v)) < 0) {
         return def_value;
     }
-    return code == nokv::VALUE_NULL ? nullptr : env->NewStringUTF(v.str_);
+    return code == nokv::VALUE_NULL ? nullptr : env->NewStringUTF(v);
 }
 
 extern "C"
@@ -304,28 +304,28 @@ Java_me_chan_nkv_NoKV_nativeGetAll(JNIEnv *env, jclass clazz, jlong ptr) {
                                             "(Ljava/lang/Object;)Z");
 
     nokv::ScopedLock<nokv::KV, true> lock(*kv);
-    kv->read_all([&](const char *const key, nokv::Entry *entry) {
+    kv->read_all([&](const nokv::kv_string_t &key, nokv::Entry *entry) {
         nokv::kv_type_t type = entry->type();
         if (type == nokv::TYPE_NULL) {
-            env->CallObjectMethod(map, put_method, env->NewStringUTF(key), (jobject) nullptr);
+            env->CallObjectMethod(map, put_method, env->NewStringUTF(key.str_), (jobject) nullptr);
         } else if (type == nokv::TYPE_INT32) {
-            env->CallObjectMethod(map, put_method, env->NewStringUTF(key),
+            env->CallObjectMethod(map, put_method, env->NewStringUTF(key.str_),
                                   env->CallStaticIntMethod(Integer_clazz, Integer_valueof,
                                                            entry->as_int32()));
         } else if (type == nokv::TYPE_FLOAT) {
-            env->CallObjectMethod(map, put_method, env->NewStringUTF(key),
+            env->CallObjectMethod(map, put_method, env->NewStringUTF(key.str_),
                                   env->CallStaticFloatMethod(Float_clazz, Float_valueof,
                                                              entry->as_float()));
         } else if (type == nokv::TYPE_INT64) {
-            env->CallObjectMethod(map, put_method, env->NewStringUTF(key),
+            env->CallObjectMethod(map, put_method, env->NewStringUTF(key.str_),
                                   env->CallStaticLongMethod(Long_clazz, Long_valueof,
                                                             entry->as_int64()));
         } else if (type == nokv::TYPE_BOOLEAN) {
-            env->CallObjectMethod(map, put_method, env->NewStringUTF(key),
+            env->CallObjectMethod(map, put_method, env->NewStringUTF(key.str_),
                                   env->CallStaticBooleanMethod(Boolean_clazz, Boolean_valueof,
                                                                entry->as_boolean()));
         } else if (type == nokv::TYPE_STRING) {
-            env->CallObjectMethod(map, put_method, env->NewStringUTF(key),
+            env->CallObjectMethod(map, put_method, env->NewStringUTF(key.str_),
                                   env->NewStringUTF(entry->as_string().str_));
         } else if (type == nokv::TYPE_ARRAY) {
             jobject set = env->NewObject(set_clazz, set_ctor);
@@ -344,7 +344,7 @@ Java_me_chan_nkv_NoKV_nativeGetAll(JNIEnv *env, jclass clazz, jlong ptr) {
                     LOGD("read map invalid state");
                 }
             }
-            env->CallObjectMethod(map, put_method, env->NewStringUTF(key), set);
+            env->CallObjectMethod(map, put_method, env->NewStringUTF(key.str_), set);
         }
     });
     return map;

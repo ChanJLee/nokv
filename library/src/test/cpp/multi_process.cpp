@@ -87,7 +87,7 @@ void subprocess(char *argv[], std::vector <MockData> &vec, int start, int end) {
         INSERT_KV(float, 2);
         INSERT_KV(int64, 3);
         INSERT_KV(boolean, 4);
-        INSERT_KV(string, 5);
+//        INSERT_KV(string, 5);
         {
             if (vec[i].type_ == 6) {
                 ScopedLock<KV, false> lock(*kv);

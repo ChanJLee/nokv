@@ -24,9 +24,10 @@ namespace nokv {
     lru_cache<std::string, KV *> gLruCache(10);
 
     void KV::flush() {
+        map_.sync();
         ::msync(buf_, map_.capacity(), MS_SYNC);
-        // todo remove to trans
         meta_.next(map_.capacity());
+        // todo remove to trans
         crc_ = map_.crc();
     }
 
@@ -147,7 +148,7 @@ namespace nokv {
     }
 
     int
-    KV::read_all(const std::function<void(const char *const, Entry *)> &fnc) {
+    KV::read_all(const std::function<void(const kv_string_t &, Entry *)> &fnc) {
         if (!reload_if()) {
             return ERROR_MAP_FAILED;
         }
@@ -160,7 +161,11 @@ namespace nokv {
             return ERROR_MAP_FAILED;
         }
 
-        return map_.contains(key) ? 0 : ERROR_NOT_FOUND;
+        kv_string_t kv_key{
+                .size_ = (uint32_t) strlen(key),
+                .str_ = key
+        };
+        return map_.contains(kv_key) ? 0 : ERROR_NOT_FOUND;
     }
 
     int KV::remove_all() {
@@ -182,7 +187,11 @@ namespace nokv {
             return ERROR_MAP_FAILED;
         }
 
-        return map_.remove(key);
+        kv_string_t kv_key{
+                .size_ = (uint32_t) strlen(key),
+                .str_ = key
+        };
+        return map_.remove(kv_key);
     }
 
     int KV::init(const char *ws) {
@@ -212,8 +221,12 @@ namespace nokv {
         if (!reload_if()) {  \
             return ERROR_MAP_FAILED; \
         } \
+        kv_string_t kv_key{ \
+            .size_ =(uint32_t) strlen(key), \
+            .str_ = key \
+        };  \
         \
-        int code = map_.put_##type(key, v); \
+        int code = map_.put_##type(kv_key, v); \
         if (code == 0) { \
             return 0; \
         } \
@@ -224,7 +237,7 @@ namespace nokv {
             } \
         } \
         \
-        return map_.put_##type(key, v); \
+        return map_.put_##type(kv_key, v); \
     }
 
     DEFINE_PUT(boolean)
@@ -244,7 +257,11 @@ namespace nokv {
             return ERROR_MAP_FAILED;
         }
 
-        int code = map_.put_null(key);
+        kv_string_t kv_key{
+                .size_ = (uint32_t) strlen(key),
+                .str_ = key
+        };
+        int code = map_.put_null(kv_key);
         if (code == 0) {
             return 0;
         }
@@ -255,15 +272,19 @@ namespace nokv {
             }
         }
 
-        return map_.put_null(key);
+        return map_.put_null(kv_key);
     }
 
 #define DEFINE_GET(type) \
-    int KV::get_##type(const char *const key, kv_##type##_t &ret) { \
+    int KV::get_##type(const char * key, kv_##type##_t &ret) { \
         if (!reload_if()) {                                         \
             return ERROR_MAP_FAILED;             \
-        } \
-        return map_.get_##type(key, ret); \
+        }                \
+        kv_string_t kv_key { \
+            .size_ =(uint32_t)strlen(key), \
+            .str_ = key \
+        };  \
+        return map_.get_##type(kv_key, ret); \
     }
 
     DEFINE_GET(boolean)
@@ -273,8 +294,6 @@ namespace nokv {
     DEFINE_GET(int64)
 
     DEFINE_GET(float)
-
-    DEFINE_GET(string)
 
     DEFINE_GET(array)
 
@@ -310,10 +329,11 @@ namespace nokv {
     }
 
     int KV::put_string(const char *const key, const char *str) {
-        nokv::kv_string_t s = {
+        nokv::kv_string_t val = {
+                .size_ = (uint32_t) strlen(str),
                 .str_ = str
         };
-        return put_string(key, s);
+        return put_string(key, val);
     }
 
     void KV::init_buf(void *buf, size_t size) {
@@ -354,5 +374,24 @@ namespace nokv {
         bind_buf(mem, st.st_size);
         meta_.update(fd_, st);
         return true;
+    }
+
+    int KV::get_string(const char *key, const char *&str) {
+        if (!reload_if()) {
+            return ERROR_MAP_FAILED;
+        }
+
+        kv_string_t kv_key{
+                .size_ = (uint32_t) strlen(key),
+                .str_ = key
+        };
+        kv_string_t ret = {};
+        int code = map_.get_string(kv_key, ret);
+        if (code != 0) {
+            return code;
+        }
+
+        str = ret.str_;
+        return 0;
     }
 }
