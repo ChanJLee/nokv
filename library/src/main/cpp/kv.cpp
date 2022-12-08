@@ -67,7 +67,6 @@ namespace nokv {
 
     int kv_array_t::to_stream(byte_t *stream) const {
         uint32_t size = end_ - begin_;
-        LOGD("fuck %d", size);
         memcpy(stream, &size, sizeof(size));
         memcpy(stream + sizeof(size), begin_, size);
         return 0;
@@ -174,6 +173,12 @@ namespace nokv {
     int
     Map::put_value(const kv_string_t &key, kv_type_t type, const std::function<void(byte_t *)> &is,
                    size_t len) {
+        size_t precompute_size = key.byte_size() /* key */ + 1 /* tag*/ + len /* value */;
+        if (header_.size_ + precompute_size >= capacity_) {
+            return ERROR_OVERFLOW;
+        }
+
+
         byte_t *begin = this->begin();
         byte_t *end = this->end();
 
@@ -244,20 +249,6 @@ namespace nokv {
 
         /* not found */
         return code;
-    }
-
-    int Map::put_value(byte_t *&where, const kv_string_t &key, kv_type_t type, byte_t *value,
-                       size_t len, size_t &total) {
-        total = key.byte_size() /* key */ + 1 /* tag*/ + len /* value */;
-        if (where + total >= begin_ + capacity_) {
-            return ERROR_OVERFLOW;
-        }
-
-        key.to_stream(where);
-        where = where + key.byte_size();
-        where[0] = type;
-        memcpy(where + 1, value, len);
-        return 0;
     }
 
     int Map::get_boolean(const kv_string_t &key, kv_boolean_t &rtn) {

@@ -209,9 +209,6 @@ namespace nokv {
         put_value(const kv_string_t &, kv_type_t, const std::function<void(byte_t *)> &,
                   size_t len);
 
-        int put_value(byte_t *&where, const kv_string_t &, kv_type_t, byte_t *value, size_t len,
-                      size_t &total);
-
         int read_all(
                 const std::function<int(const kv_string_t &, byte_t *, size_t)> &fnc);
     };
