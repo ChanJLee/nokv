@@ -8,6 +8,7 @@
 #include <inttypes.h>
 #include <functional>
 #include <cstring>
+#include <unordered_map>
 
 namespace nokv {
     typedef unsigned char byte_t;
@@ -40,6 +41,9 @@ namespace nokv {
         int to_stream(byte_t *stream) const;
 
         static int from_stream(byte_t *stream, kv_string_t *str);
+
+        /* with bound check */
+        static int from_stream_safe(byte_t *stream, kv_string_t *str, byte_t *end);
 
         size_t byte_size() const { return size_ + sizeof(size_) + 1; }
     };
@@ -128,7 +132,7 @@ namespace nokv {
         char magic_[4] = {'n', 'o', 'k', 'v'};
         uint16_t order_ = 0x1234;
         uint16_t version_ = 0x0100;
-        uint32_t crc_ = 0;
+        uint32_t crc_ = 0; /* todo remove */
         uint32_t size_ = 0;
     } __attribute__ ((aligned (4)));
 
@@ -137,6 +141,26 @@ namespace nokv {
         uint32_t capacity_;
         byte_t *begin_;
         byte_t *buf_;
+
+        template<class _Tp>
+        struct predicate : public std::binary_function<_Tp, _Tp, bool> {
+            bool operator()(const _Tp &__x, const _Tp &__y) const { return strcmp(__x, __y) == 0; }
+        };
+
+        struct hash {
+            int operator()(const char *str) const {
+                int seed = 131;//31  131 1313 13131131313 etc//
+                int hash = 0;
+                while (*str) {
+                    hash = (hash * seed) + (*str);
+                    str++;
+                }
+
+                return hash & (0x7FFFFFFF);
+            }
+        };
+
+        std::unordered_map<const char *, byte_t *, hash, predicate<const char *>> lru_;
     public:
         // 初始化一块内存
         void init(byte_t *buf, uint32_t size) {
@@ -152,6 +176,8 @@ namespace nokv {
             capacity_ = size - sizeof(Header);
             begin_ = buf + sizeof(Header);
             buf_ = buf;
+            lru_.clear();
+            build_lru_cache(this->begin(), this->end());
         }
 
         byte_t *begin() { return begin_; }
@@ -210,6 +236,12 @@ namespace nokv {
 
         int read_all(
                 const std::function<int(const kv_string_t &, byte_t *, size_t)> &fnc);
+
+        int read_all(
+                byte_t *begin, byte_t *end,
+                const std::function<int(const kv_string_t &, byte_t *, size_t)> &fnc);
+
+        void build_lru_cache(byte_t *begin, byte_t *end);
     };
 }
 
