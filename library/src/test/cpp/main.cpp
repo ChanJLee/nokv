@@ -12,22 +12,22 @@ int main(int argc, char *argv[]) {
     kv->put_string("string", "hello world");
 //    kv->put_boolean("boolean", true);
 //    kv->put_float("float", 3.1415926);
-//    kv->put_int32("int32", 123456);
+//    kv->put_int32("int32", 0x123456);
 //    kv->put_int64("int64", 0xbabeaaaa);
 //    kv->put_string("suffix", "====");
 //    kv->put_string("string", "hello world2");
 //
-//    nokv::kv_array_t array;
-//    nokv::kv_array_t::create(array);
-//
-//    array.put_string("a1");
-//    array.put_string("a2");
+    nokv::kv_array_t array;
+    nokv::kv_array_t::create(array);
+
+    array.put_string("a1");
 //    array.put_null();
 //    array.put_string("a3");
-//
-//    kv->put_array("array", array);
-//    kv->put_string("suffix2", "====");
 
+    kv->put_array("array", array);
+    kv->put_string("suffix2", "====");
+    kv->flush();
+//
     std::cout << "read all, size: " << kv->size() << std::endl;
     kv->read_all([=](const nokv::kv_string_t key, nokv::Entry *entry) {
         printf("key: %s, value: ", key.str_);
@@ -56,6 +56,21 @@ int main(int argc, char *argv[]) {
                 const char *v = entry->as_string().str_;
                 printf("%s", v);
                 break;
+            }
+            case nokv::TYPE_ARRAY: {
+                auto it = entry->as_array().it();
+                nokv::Entry item;
+                printf("[");
+                while (it.next(&item)) {
+                    if (item.type() == nokv::TYPE_STRING) {
+                        const char *v = entry->as_string().str_;
+                        printf("%s,", v);
+                        break;
+                    } else if (item.type() == nokv::TYPE_NULL) {
+                        printf("null,");
+                    }
+                }
+                printf("], size: %d", array.byte_count() - 4);
             }
         }
         printf("\n");

@@ -54,15 +54,19 @@ namespace nokv {
 
         static int from_stream(byte_t *stream, kv_array_t *array);
 
+        int to_stream(byte_t *stream) const;
+
         static int create(kv_array_t &array);
 
         static int free(kv_array_t &array);
 
-        int put_string(const kv_string_t &);
-
         int put_string(const char *);
 
         int put_null();
+
+        size_t byte_count() const {
+            return end_ - begin_ + 4;
+        }
 
         class iterator {
             byte_t *begin_;
@@ -76,9 +80,11 @@ namespace nokv {
             friend class kv_array_t;
         };
 
-        iterator it() { return iterator(begin_ + 5, end_); }
+        iterator it() const { return iterator(begin_ + 5, end_); }
 
     private:
+        int put_string(const kv_string_t &);
+
         void resize();
     };
 
@@ -200,7 +206,8 @@ namespace nokv {
         int get_value(const kv_string_t &, byte_t **ret);
 
         int
-        put_value(const kv_string_t &, kv_type_t, const std::function<void(byte_t *)> &, size_t len);
+        put_value(const kv_string_t &, kv_type_t, const std::function<void(byte_t *)> &,
+                  size_t len);
 
         int put_value(byte_t *&where, const kv_string_t &, kv_type_t, byte_t *value, size_t len,
                       size_t &total);

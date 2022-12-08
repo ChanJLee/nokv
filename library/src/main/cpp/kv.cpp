@@ -42,11 +42,11 @@ namespace nokv {
         }
 
         if (entry->type_ == TYPE_STRING) {
-            return kv_string_t::from_stream(++stream, &entry->data_.string_);
+            return kv_string_t::from_stream(stream + 1, &entry->data_.string_);
         }
 
         if (entry->type_ == TYPE_ARRAY) {
-            return nokv::kv_array_t::from_stream(stream, &entry->data_.array_);
+            return nokv::kv_array_t::from_stream(stream + 1, &entry->data_.array_);
         }
 
         int size = get_entry_size(stream);
@@ -59,17 +59,24 @@ namespace nokv {
     }
 
     int nokv::kv_array_t::from_stream(nokv::byte_t *stream, nokv::kv_array_t *array) {
-        array->begin_ = stream + 1;
-        memcpy(&array->capacity_, array->begin_, 4);
+        memcpy(&array->capacity_, stream, 4);
+        array->begin_ = stream + 4;
         array->end_ = array->begin_ + array->capacity_;
+        return 0;
+    }
+
+    int kv_array_t::to_stream(byte_t *stream) const {
+        uint32_t size = end_ - begin_;
+        LOGD("fuck %d", size);
+        memcpy(stream, &size, sizeof(size));
+        memcpy(stream + sizeof(size), begin_, size);
         return 0;
     }
 
     int kv_array_t::create(kv_array_t &array) {
         array.capacity_ = 1024;
         array.begin_ = new byte_t[array.capacity_];
-        array.begin_[0] = TYPE_ARRAY;
-        array.end_ = array.begin_ + 4 /* 4u(len) */;
+        array.end_ = array.begin_;
         return 0;
     }
 
@@ -79,13 +86,14 @@ namespace nokv {
     }
 
     int kv_array_t::put_string(const kv_string_t &str) {
-        size_t byte_len = str.byte_size();
-        if (end_ + byte_len + 1/* tag */> begin_ + capacity_) {
+        size_t byte_len = str.byte_size() + 1;
+        if (end_ + byte_len > begin_ + capacity_) {
             resize();
         }
 
         end_[0] = TYPE_STRING;
-        end_ = end_ + 1 + byte_len;
+        str.to_stream(end_ + 1);
+        end_ = end_ + byte_len;
         return 0;
     }
 
@@ -124,8 +132,8 @@ namespace nokv {
 
     int nokv::Map::put_array(const kv_string_t &key, const nokv::kv_array_t &array) {
         return put_value(key, TYPE_ARRAY, [=](byte_t *buf) -> void {
-            memcpy(buf, array.begin_, array.end_ - array.begin_);
-        }, array.end_ - array.begin_);
+            array.to_stream(buf);
+        }, array.byte_count());
     }
 
     int Map::put_string(const kv_string_t &key, const kv_string_t &str) {
