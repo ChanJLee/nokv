@@ -218,6 +218,8 @@ namespace nokv {
             write_ptr = adjust_ptr + offset_size;
             build_lru_cache(adjust_ptr, write_ptr);
             new_size = prev_total_size + (len + 1 - prev_size);
+            header_.size_ = write_ptr - begin;
+            memcpy(buf_, &header_, sizeof(Header));
             goto do_write;
         }
 
