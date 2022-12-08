@@ -9,24 +9,50 @@
 
 namespace nokv {
 
-    class ThreadLock {
-        std::shared_mutex thread_lock_;
+    class AbstractLock {
+        int bad_;
+        int good_;
     public:
-        ThreadLock() {};
+        AbstractLock() : bad_(0), good_(0) {}
+
+        virtual ~AbstractLock() {}
 
         void lock(bool share);
 
         void unlock(bool share);
+
+    protected:
+        virtual void doLock(bool share) = 0;
+
+        virtual void doUnlock(bool share) = 0;
+
+        virtual bool doTryLock(bool share) = 0;
     };
 
-    class ProcessLock {
+    class ThreadLock : public AbstractLock {
+        std::shared_mutex thread_lock_;
+    public:
+        ThreadLock() : thread_lock_() {};
+
+    protected:
+        void doLock(bool share) override final;
+
+        void doUnlock(bool share) override final;
+
+        bool doTryLock(bool share) override final;
+    };
+
+    class ProcessLock : public AbstractLock {
         int fd_;
     public:
         ProcessLock(int fd) : fd_(fd) {};
 
-        void lock(bool share);
+    protected:
+        void doLock(bool share) override final;
 
-        void unlock(bool share);
+        void doUnlock(bool share) override final;
+
+        bool doTryLock(bool share) override final;
     };
 
     class Lock {
