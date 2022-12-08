@@ -508,16 +508,17 @@ namespace nokv {
     }
 
     bool kv_array_t::iterator::next(Entry *entry) {
-        if (it_ >= end_) {
+        if (begin_ >= end_) {
             return false;
         }
 
-        int code = Entry::from_stream(it_, entry);
+        int code = Entry::from_stream(begin_, entry);
         if (code != 0) {
             return false;
         }
 
-        it_ += Entry::get_entry_size(it_);
+        size_t offset = Entry::get_entry_size(begin_);
+        begin_ += offset;
         return true;
     }
 

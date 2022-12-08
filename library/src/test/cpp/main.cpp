@@ -21,13 +21,13 @@ int main(int argc, char *argv[]) {
     nokv::kv_array_t::create(array);
 
     array.put_string("a1");
-//    array.put_null();
-//    array.put_string("a3");
+    array.put_null();
+    array.put_string("a3");
 
     kv->put_array("array", array);
     kv->put_string("suffix2", "====");
     kv->flush();
-//
+
     std::cout << "read all, size: " << kv->size() << std::endl;
     kv->read_all([=](const nokv::kv_string_t key, nokv::Entry *entry) {
         printf("key: %s, value: ", key.str_);
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
                 printf("[");
                 while (it.next(&item)) {
                     if (item.type() == nokv::TYPE_STRING) {
-                        const char *v = entry->as_string().str_;
+                        const char *v = item.as_string().str_;
                         printf("%s,", v);
                         break;
                     } else if (item.type() == nokv::TYPE_NULL) {

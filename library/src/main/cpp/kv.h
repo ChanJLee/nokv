@@ -71,16 +71,15 @@ namespace nokv {
         class iterator {
             byte_t *begin_;
             byte_t *end_;
-            byte_t *it_;
 
-            iterator(byte_t *begin, byte_t *end) : begin_(begin), end_(end), it_(begin) {};
+            iterator(byte_t *begin, byte_t *end) : begin_(begin), end_(end) {};
         public:
             bool next(Entry *entry);
 
             friend class kv_array_t;
         };
 
-        iterator it() const { return iterator(begin_ + 5, end_); }
+        iterator it() const { return iterator(begin_, end_); }
 
     private:
         int put_string(const kv_string_t &);
