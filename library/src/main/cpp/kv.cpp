@@ -91,7 +91,8 @@ namespace nokv {
         }
 
         end_[0] = TYPE_STRING;
-        str.to_stream(end_ + 1);
+        int code = str.to_stream(end_ + 1);
+        if (code) { return code; }
         end_ = end_ + byte_len;
         return 0;
     }
