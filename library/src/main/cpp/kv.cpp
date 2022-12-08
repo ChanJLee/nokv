@@ -213,24 +213,45 @@ namespace nokv {
 
             // 长度发生了变化就要重排
             size_t offset_size = end - write_ptr - prev_size;
-            memcpy(write_ptr - key.byte_size(), write_ptr + prev_size, offset_size);
-            write_ptr = write_ptr - key.byte_size() + offset_size;
+            byte_t *adjust_ptr = write_ptr - key.byte_size();
+            memcpy(adjust_ptr, write_ptr + prev_size, offset_size);
+            write_ptr = adjust_ptr + offset_size;
+            build_lru_cache(adjust_ptr, write_ptr);
             new_size = prev_total_size + (len + 1 - prev_size);
             goto do_write;
         }
 
         do_write:
+        byte_t *save = write_ptr;
         key.to_stream(write_ptr);
         write_ptr += key.byte_size();
         write_ptr[0] = type;
         is(write_ptr + 1);
         header_.size_ = new_size;
         memcpy(buf_, &header_, sizeof(Header));
+        lru_[key.str_] = save;
         return 0;
     }
 
     int Map::get_value(const kv_string_t &key, byte_t **ret) {
         int code = ERROR_NOT_FOUND;
+
+        const auto &it = lru_.find(key.str_);
+        if (it != lru_.end()) {
+            // cache hit
+            byte_t *cache = it->second;
+            byte_t *end = this->end();
+            if (cache >= begin() && cache < end) {
+                kv_string_t temp = {};
+                if (kv_string_t::from_stream_safe(cache, &temp, end) == 0 &&
+                    key.size_ == temp.size_ &&
+                    strncmp(key.str_, temp.str_, key.size_) == 0) {
+                    *ret = cache + key.byte_size();
+                    return 0;
+                }
+            }
+        }
+
         read_all(
                 [&](const kv_string_t &entry_key, byte_t *body,
                     size_t body_len) -> int {
@@ -239,6 +260,7 @@ namespace nokv {
                         return 0;
                     }
 
+                    lru_[key.str_] = body - key.byte_size();
                     *ret = body;
                     code = 0;
                     return 1;
@@ -468,8 +490,12 @@ namespace nokv {
 
     int Map::read_all(
             const std::function<int(const kv_string_t &, byte_t *, size_t)> &fnc) {
-        byte_t *begin = this->begin();
-        byte_t *end = this->end();
+        return read_all(begin(), end(), fnc);
+    }
+
+    int Map::read_all(
+            byte_t *begin, byte_t *end,
+            const std::function<int(const kv_string_t &, byte_t *, size_t)> &fnc) {
         kv_string_t key = {};
 
         while (begin < end) {
@@ -505,6 +531,13 @@ namespace nokv {
         memcpy(buf_, &header_, sizeof(Header));
     }
 
+    void Map::build_lru_cache(byte_t *begin, byte_t *end) {
+        read_all(begin, end, [=](const kv_string_t &key, byte_t *body, size_t) -> int {
+            lru_[key.str_] = body - key.byte_size();
+            return 0;
+        });
+    }
+
     bool kv_array_t::iterator::next(Entry *entry) {
         if (begin_ >= end_) {
             return false;
@@ -529,6 +562,17 @@ namespace nokv {
 
     int kv_string_t::from_stream(byte_t *stream, kv_string_t *str) {
         memcpy(&str->size_, stream, 4);
+        str->str_ = (const char *) (stream + sizeof(str->size_));
+        return 0;
+    }
+
+    int kv_string_t::from_stream_safe(byte_t *stream, kv_string_t *str, byte_t *end) {
+        memcpy(&str->size_, stream, 4);
+        byte_t *str_end = stream + str->size_ + 4;
+        if (str_end >= end && *str_end != '\0') {
+            return ERROR_INVALID_STATE;
+        }
+
         str->str_ = (const char *) (stream + sizeof(str->size_));
         return 0;
     }
