@@ -144,7 +144,9 @@ namespace nokv {
 
         template<class _Tp>
         struct predicate : public std::binary_function<_Tp, _Tp, bool> {
-            bool operator()(const _Tp &__x, const _Tp &__y) const { return strcmp(__x, __y) == 0; }
+            bool operator()(const _Tp &__x, const _Tp &__y) const {
+                return __x == __y || strcmp(__x, __y) == 0;
+            }
         };
 
         struct hash {
