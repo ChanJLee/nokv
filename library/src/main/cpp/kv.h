@@ -148,15 +148,14 @@ namespace nokv {
         };
 
         struct hash {
-            int operator()(const char *str) const {
-                int seed = 131;//31  131 1313 13131131313 etc//
-                int hash = 0;
+            size_t operator()(const char *str) const {
+                int seed = 31;
+                size_t hash = 0;
                 while (*str) {
                     hash = (hash * seed) + (*str);
                     str++;
                 }
-
-                return hash & (0x7FFFFFFF);
+                return hash;
             }
         };
 
