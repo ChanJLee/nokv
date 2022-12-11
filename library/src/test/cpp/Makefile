@@ -4,8 +4,8 @@ CFLAGS = -DNKV_UNIT_TEST -std=c++17 -Wunused-result
 all: clean build
 
 build: core.o lock.o main.o multi_process.o kv.o meta.o
-	$(CC) lock.o core.o main.o kv.o meta.o -lz -o main
-	$(CC) lock.o core.o multi_process.o kv.o meta.o -lz -o multi_process
+	$(CC) lock.o core.o main.o kv.o meta.o -lz -lpthread -o main
+	$(CC) lock.o core.o multi_process.o kv.o meta.o -lz -lpthread -o multi_process
 
 meta.o:
 	$(CC) $(CFLAGS) -D st_mtim=st_mtimespec -c ../../main/cpp/meta.cpp
