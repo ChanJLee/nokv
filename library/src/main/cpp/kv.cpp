@@ -215,10 +215,10 @@ namespace nokv {
             // 长度发生了变化就要重排
             size_t offset_size = end - write_ptr - prev_size;
             byte_t *adjust_ptr = write_ptr - key.byte_size();
-            memcpy(adjust_ptr, write_ptr + prev_size, offset_size);
+            memmove(adjust_ptr, write_ptr + prev_size, offset_size);
             write_ptr = adjust_ptr + offset_size;
 #ifdef NKV_UNIT_TEST
-            LOGD("invalid cache: %d, new size %d", (adjust_ptr - begin), (write_ptr - begin));
+            LOGD("invalid cache: %d, new size %d, %p %p", (adjust_ptr - begin), (write_ptr - begin), adjust_ptr, write_ptr);
 #endif
             build_lru_cache(adjust_ptr, write_ptr);
             new_size = prev_total_size + (len + 1 - prev_size);
@@ -485,7 +485,7 @@ namespace nokv {
                     }
 
                     size_t count = entry_key.byte_size() + body_len;
-                    memcpy(body - entry_key.byte_size(), body + body_len, count);
+                    memmove(body - entry_key.byte_size(), body + body_len, count);
                     header_.size_ -= count;
                     return 1;
                 });
