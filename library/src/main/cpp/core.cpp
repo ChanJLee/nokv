@@ -281,6 +281,8 @@ namespace nokv {
         } else if (st.st_size > size) {
             // TODO return direct
             ftruncate(fd_, size);
+        } else {
+            LOGD("do noting, size is equal to %d", size);
         }
 
         if (fstat(fd_, &st) || st.st_size != size) {

@@ -217,6 +217,9 @@ namespace nokv {
             byte_t *adjust_ptr = write_ptr - key.byte_size();
             memcpy(adjust_ptr, write_ptr + prev_size, offset_size);
             write_ptr = adjust_ptr + offset_size;
+#ifdef NKV_UNIT_TEST
+            LOGD("invalid cache: %d, new size %d", (adjust_ptr - begin), (write_ptr - begin));
+#endif
             build_lru_cache(adjust_ptr, write_ptr);
             new_size = prev_total_size + (len + 1 - prev_size);
             header_.size_ = write_ptr - begin;
@@ -490,7 +493,7 @@ namespace nokv {
 
     int Map::read_all(
             const std::function<int(const kv_string_t &, byte_t *, size_t)> &fnc) {
-        return read_all(begin(), end(), fnc);
+        return read_all(this->begin(), this->end(), fnc);
     }
 
     int Map::read_all(
@@ -504,7 +507,10 @@ namespace nokv {
             int entry_size = Entry::get_entry_size(data);
             if (entry_size < 0) {
                 /* invalid state */
-                LOGD("invalid state at: %d", __LINE__);
+                LOGD("invalid state at: %d, begin %p, end %p", __LINE__, begin, end);
+#ifdef NKV_UNIT_TEST
+                exit(1);
+#endif
                 return ERROR_INVALID_STATE;
             }
 
