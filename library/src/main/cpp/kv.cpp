@@ -484,7 +484,6 @@ namespace nokv {
                     size_t count = entry_key.byte_size() + body_len;
                     memcpy(body - entry_key.byte_size(), body + body_len, count);
                     header_.size_ -= count;
-                    header_.crc_ = crc32(0, begin(), header_.size_);
                     return 1;
                 });
     }
@@ -505,7 +504,7 @@ namespace nokv {
             int entry_size = Entry::get_entry_size(data);
             if (entry_size < 0) {
                 /* invalid state */
-                LOGD("invalid state");
+                LOGD("invalid state at: %d", __LINE__);
                 return ERROR_INVALID_STATE;
             }
 
