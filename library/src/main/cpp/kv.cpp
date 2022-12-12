@@ -187,8 +187,8 @@ namespace nokv {
         // 1. 先保证数据结构完整
         // 不更新crc，方便后面可以恢复
         auto prev_total_size = header_.size_;
-        header_.size_ = write_ptr == nullptr ? prev_total_size : write_ptr - begin;
-        memcpy(buf_, &header_, sizeof(Header));
+
+        header_.size_ = write_ptr == nullptr ? prev_total_size : write_ptr - begin - key.byte_size();
 
         size_t new_size = 0;
 
@@ -220,7 +220,6 @@ namespace nokv {
             build_lru_cache(adjust_ptr, write_ptr);
             new_size = prev_total_size + (len + 1 - prev_size);
             header_.size_ = write_ptr - begin;
-            memcpy(buf_, &header_, sizeof(Header));
             goto do_write;
         }
 
@@ -231,7 +230,6 @@ namespace nokv {
         write_ptr[0] = type;
         is(write_ptr + 1);
         header_.size_ = new_size;
-        memcpy(buf_, &header_, sizeof(Header));
         lru_[key.str_] = save;
         return 0;
     }
