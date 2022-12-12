@@ -46,7 +46,8 @@ struct MockData {
     {                                                                 \
         if (vec[i].type_ == tag)                                      \
         {                                                             \
-            ScopedLock<KV, false> lock(*kv);                                 \
+            ScopedLock<KV, false> lock(*kv);                          \
+            kv->reload_if();                                          \
             kv->put_##type(vec[i].key.c_str(), vec[i].data_.type##_); \
             kv->flush(); \
             continue;                                                 \
