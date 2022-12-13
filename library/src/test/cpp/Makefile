@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -DNKV_UNIT_TEST -std=c++17 -Wunused-result
+CFLAGS = -DNKV_UNIT_TEST -std=c++17 -Wunused-result -g -rdynamic
 
 all: clean build
 

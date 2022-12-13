@@ -189,6 +189,8 @@ namespace nokv {
         auto prev_total_size = header_.size_;
 
         header_.size_ = write_ptr == nullptr ? prev_total_size : write_ptr - begin - key.byte_size();
+        header_.crc_ = 0;
+        memcpy(buf_, &header_, sizeof (header_));
 
         size_t new_size = 0;
 
@@ -223,6 +225,7 @@ namespace nokv {
             build_lru_cache(adjust_ptr, write_ptr);
             new_size = prev_total_size + (len + 1 - prev_size);
             header_.size_ = write_ptr - begin;
+            memcpy(buf_, &header_, sizeof (header_));
             goto do_write;
         }
 
@@ -233,6 +236,7 @@ namespace nokv {
         write_ptr[0] = type;
         is(write_ptr + 1);
         header_.size_ = new_size;
+        memcpy(buf_, &header_, sizeof (header_));
         lru_[key.str_] = save;
         return 0;
     }
@@ -535,6 +539,7 @@ namespace nokv {
 
     void Map::sync() {
         header_.crc_ = crc32(0, begin(), header_.size_);
+        LOGD("sync size: %d", header_.size_);
         memcpy(buf_, &header_, sizeof(Header));
     }
 

@@ -8,6 +8,48 @@
 #include <sys/wait.h>
 #include <sstream>
 #include <fstream>
+#include <execinfo.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <stddef.h>
+
+void print_trace(void)
+{
+    void* array[30];
+    size_t size;
+    char** strings;
+    size_t i;
+
+
+    size = backtrace(array, 30);
+    strings = backtrace_symbols(array, size);
+    if (NULL == strings)
+    {
+        perror("backtrace_symbols");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Obtained %zd stack frames.\n", size);
+
+    for(i = 0 ; i < size; i++)
+    {
+        printf("%s\n", strings[i]);
+    }
+
+    free(strings);
+    strings = NULL;
+
+    exit(EXIT_SUCCESS);
+}
+
+void sighandler_dump_stack(int sig)
+{
+    psignal(sig, "handler");	// 打印信号相关信息
+    print_trace();
+    signal(sig, SIG_DFL);		// 恢复信号默认处理
+    raise(sig);					// 继续后续的流程
+}
 
 using namespace nokv;
 
@@ -76,6 +118,9 @@ struct MockData {
     }
 
 void subprocess(char *argv[], std::vector <MockData> &vec, int start, int end) {
+    if (signal(SIGSEGV, sighandler_dump_stack) == SIG_ERR)
+        perror("signal failed");
+
     nokv::KV::init(argv[1]);
     nokv::KV *kv = nokv::KV::create(argv[2]);
     if (kv == nullptr) {
@@ -104,6 +149,7 @@ void subprocess(char *argv[], std::vector <MockData> &vec, int start, int end) {
 }
 
 int main(int argc, char *argv[]) {
+
     std::vector <MockData> vec;
     int total = 10000;
     for (int i = 0; i < total; ++i) {
@@ -139,7 +185,7 @@ int main(int argc, char *argv[]) {
 //         }
     }
 
-    int sub_size = 10;
+    int sub_size = 2;
     std::cout << "total data size: " << vec.size() << std::endl;
     int step = vec.size() / sub_size;
 
