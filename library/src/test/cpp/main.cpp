@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     kv->flush();
 
     std::cout << "read all, size: " << kv->size() << std::endl;
-    kv->read_all([=](const nokv::kv_string_t key, nokv::Entry *entry) {
+    kv->read_all([=](const nokv::kv_string_t& key, nokv::Entry *entry) {
         printf("key: %s, value: ", key.str_);
         switch (entry->type()) {
             case nokv::TYPE_INT64: {
