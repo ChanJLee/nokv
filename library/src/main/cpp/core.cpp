@@ -336,7 +336,11 @@ namespace nokv {
             return false;
         }
 
+#ifdef NKV_UNIT_TEST
+        LOGD("process %d reload, size %d", getpid(), st.st_size);
+#else
         LOGD("reload");
+#endif
         bind_buf(mem, st.st_size);
         meta_.update(fd_, st);
         return true;

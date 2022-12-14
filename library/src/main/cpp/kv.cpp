@@ -513,8 +513,8 @@ namespace nokv {
             size_t entry_size = Entry::get_entry_size(data);
             if (data + entry_size > end) {
                 /* invalid state */
-                LOGD("invalid state at: %d, begin %p, end %p, key: %s", __LINE__, begin, end, key.str_);
 #ifdef NKV_UNIT_TEST
+                LOGD("read all internal invalid state, begin %p, end %p, key: %s, pid: %d",  begin, end, key.str_, getpid());
                 exit(1);
 #endif
                 return ERROR_INVALID_STATE;

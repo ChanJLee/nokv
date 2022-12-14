@@ -132,7 +132,7 @@ void read_proc(char *argv[], int start, int end)
 int main(int argc, char *argv[])
 {
     int total = 20000;
-    int sub_size = 8;
+    int sub_size = 2;
     int step = total / sub_size;
 
     std::vector<pid_t> children;
@@ -149,15 +149,15 @@ int main(int argc, char *argv[])
         }
     }
 
-    pid_t pid = fork();
-    if (pid == 0)
-    {
-        read_proc(argv, 0, total);
-    }
-    else
-    {
-        children.push_back(pid);
-    }
+//    pid_t pid = fork();
+//    if (pid == 0)
+//    {
+//        read_proc(argv, 0, total);
+//    }
+//    else
+//    {
+//        children.push_back(pid);
+//    }
 
     int status;
     int w;
@@ -202,9 +202,9 @@ int main(int argc, char *argv[])
     nokv::KV::init(argv[1]);
     nokv::KV *kv = nokv::KV::create(argv[2]);
 
-    // kv->read_all([=](const nokv::kv_string_t& key, nokv::Entry *entry) {
-    //     std::cout << key.str_ << " " << entry->as_int32() << std::endl;
-    // });
+//     kv->read_all([=](const nokv::kv_string_t& key, nokv::Entry *entry) {
+//         std::cout << key.str_ << " " << entry->as_int32() << std::endl;
+//     });
 
     for (int i = 0; i < total; ++i)
     {
