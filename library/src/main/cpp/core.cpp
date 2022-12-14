@@ -24,9 +24,7 @@ namespace nokv {
     void KV::flush() {
         map_.sync();
         ::msync(buf_, map_.capacity(), MS_SYNC);
-        meta_.next(map_.capacity());
-        // todo remove to trans
-        crc_ = map_.crc();
+        meta_ = KVMeta::seq(fd_);
     }
 
     void KV::close() {
@@ -298,7 +296,9 @@ namespace nokv {
         }
 
         bind_buf(mem, st.st_size);
-        LOGD("resize to %d", size);
+#ifdef NKV_UNIT_TEST
+        LOGD("resize to %d, process %d did it", size, getpid());
+#endif
         return 0;
     }
 
@@ -313,23 +313,16 @@ namespace nokv {
     void KV::init_buf(void *buf, size_t size) {
         buf_ = static_cast<byte_t *>(buf);
         map_.init(buf_, size);
-        crc_ = map_.crc();
     }
 
     void KV::bind_buf(void *buf, size_t size) {
         buf_ = static_cast<byte_t *>(buf);
         map_.bind(buf_, size);
-        crc_ = map_.crc();
     }
 
     bool KV::reload_if() {
         KVMeta meta = KVMeta::seq(fd_);
         if (meta == meta_) {
-            return true;
-        }
-
-        if (crc_ == map_.crc()) {
-            meta_ = meta;
             return true;
         }
 

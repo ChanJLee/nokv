@@ -5,7 +5,6 @@
 #include "meta.h"
 #include <string>
 #include "kv.h"
-#include <ctime>
 
 namespace nokv {
     bool KVMeta::operator==(const KVMeta &rhs) const {
@@ -27,18 +26,6 @@ namespace nokv {
         fstat(fd, &st);
         meta.update(fd, st);
         return meta;
-    }
-
-    void KVMeta::next(size_t size) {
-        struct timespec ts;
-        clock_gettime(CLOCK_REALTIME, &ts);
-        if (seq_.tv_sec == ts.tv_sec) {
-            seq_.tv_sec++;
-            return;
-        }
-        seq_ = ts;
-        futimens(fd_, &ts);
-        size_ = size;
     }
 
     void KVMeta::update(int fd, const struct stat &st) {

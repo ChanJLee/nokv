@@ -144,14 +144,15 @@ void subprocess(char *argv[], int start, int end)
     }
 
     nokv::KV::destroy(kv);
+    std::cout << getpid() << " write finished" << std::endl;
     exit(0);
 }
 
 int main(int argc, char *argv[])
 {
 
-    int total = 10000;
-    int sub_size = 2;
+    int total = 20000;
+    int sub_size = 10;
     int step = total / sub_size;
 
     std::vector<pid_t> children;
