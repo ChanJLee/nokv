@@ -35,11 +35,14 @@ namespace nokv {
     typedef int64_t kv_int64_t;
 
     struct kv_string_t {
-        uint32_t size_;
+        typedef uint32_t kv_string_size_t;
+
+        kv_string_size_t size_;
         const char *str_;
 
         int to_stream(byte_t *stream) const;
 
+        // todo support from c style str
         static int from_stream(byte_t *stream, kv_string_t *str);
 
         /* with bound check */
@@ -51,7 +54,9 @@ namespace nokv {
     struct Entry;
 
     struct kv_array_t {
-        size_t capacity_;
+        typedef uint32_t kv_array_size_t;
+
+        kv_array_size_t capacity_;
         byte_t *end_;
         /* 1u + 4u + elements */
         byte_t *begin_;
@@ -125,7 +130,7 @@ namespace nokv {
 
         static int from_stream(byte_t *stream, Entry *entry);
 
-        static int get_entry_size(byte_t *entry);
+        static size_t get_entry_size(byte_t *entry);
     };
 
     struct Header {
@@ -169,6 +174,7 @@ namespace nokv {
             capacity_ = size - sizeof(Header);
             begin_ = buf + sizeof(Header);
             buf_ = buf;
+            lru_.clear();
         }
 
         // 和一块内存绑定
@@ -177,6 +183,7 @@ namespace nokv {
             capacity_ = size - sizeof(Header);
             begin_ = buf + sizeof(Header);
             buf_ = buf;
+            lru_.clear();
             build_lru_cache(this->begin(), this->end());
         }
 

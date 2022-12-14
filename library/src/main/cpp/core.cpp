@@ -152,7 +152,7 @@ namespace nokv {
 
     int KV::contains(const char *const key) {
         kv_string_t kv_key{
-                .size_ = (uint32_t) strlen(key),
+                .size_ = (kv_string_t::kv_string_size_t) strlen(key),
                 .str_ = key
         };
         return map_.contains(kv_key) ? 0 : ERROR_NOT_FOUND;
@@ -170,7 +170,7 @@ namespace nokv {
 
     int KV::remove(const char *const key) {
         kv_string_t kv_key{
-                .size_ = (uint32_t) strlen(key),
+                .size_ = (kv_string_t::kv_string_size_t) strlen(key),
                 .str_ = key
         };
         return map_.remove(kv_key);
@@ -201,7 +201,7 @@ namespace nokv {
 #define DEFINE_PUT(type) \
     int KV::put_##type(const char *const key, const kv_##type##_t &v) { \
         kv_string_t kv_key{ \
-            .size_ =(uint32_t) strlen(key), \
+            .size_ =(kv_string_t::kv_string_size_t) strlen(key), \
             .str_ = key \
         };  \
         \
@@ -233,7 +233,7 @@ namespace nokv {
 
     int KV::put_null(const char *const key) {
         kv_string_t kv_key{
-                .size_ = (uint32_t) strlen(key),
+                .size_ = (kv_string_t::kv_string_size_t) strlen(key),
                 .str_ = key
         };
         int code = map_.put_null(kv_key);
@@ -253,7 +253,7 @@ namespace nokv {
 #define DEFINE_GET(type) \
     int KV::get_##type(const char * key, kv_##type##_t &ret) { \
         kv_string_t kv_key { \
-            .size_ =(uint32_t)strlen(key), \
+            .size_ =(kv_string_t::kv_string_size_t)strlen(key), \
             .str_ = key \
         };  \
         return map_.get_##type(kv_key, ret); \
@@ -304,7 +304,7 @@ namespace nokv {
 
     int KV::put_string(const char *const key, const char *str) {
         nokv::kv_string_t val = {
-                .size_ = (uint32_t) strlen(str),
+                .size_ = (kv_string_t::kv_string_size_t) strlen(str),
                 .str_ = str
         };
         return put_string(key, val);
@@ -352,7 +352,7 @@ namespace nokv {
 
     int KV::get_string(const char *key, const char *&str) {
         kv_string_t kv_key{
-                .size_ = (uint32_t) strlen(key),
+                .size_ = (kv_string_t::kv_string_size_t) strlen(key),
                 .str_ = key
         };
         kv_string_t ret = {};

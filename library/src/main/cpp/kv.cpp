@@ -9,7 +9,7 @@
 
 namespace nokv {
 
-    int nokv::Entry::get_entry_size(nokv::byte_t *entry) {
+    size_t nokv::Entry::get_entry_size(nokv::byte_t *entry) {
         switch (entry[0]) {
             case nokv::TYPE_INT32:
             case nokv::TYPE_FLOAT:
@@ -19,16 +19,17 @@ namespace nokv {
             case nokv::TYPE_INT64:
                 return 9;
             case nokv::TYPE_STRING: {
-                int32_t size = 0;
+                kv_string_t::kv_string_size_t size = 0;
                 memcpy(&size, entry + 1, sizeof(size));
-                return 4 /* str len */ + size + 1 /* \0 */ + 1 /* tag */;
+                return sizeof(kv_string_t::kv_string_size_t) /* str len */ + size + 1 /* \0 */ +
+                       1 /* tag */;
             }
             case nokv::TYPE_NULL:
                 return 1;
             case nokv::TYPE_ARRAY: {
-                int32_t size = 0;
+                kv_array_t::kv_array_size_t size = 0;
                 memcpy(&size, entry + 1, sizeof(size));
-                return size + 1 + 4;
+                return size + 1 + sizeof(kv_array_t::kv_array_size_t);
             }
         }
 
@@ -122,7 +123,7 @@ namespace nokv {
 
     int kv_array_t::put_string(const char *str) {
         kv_string_t string = {
-                .size_ = (uint32_t) strlen(str),
+                .size_ = (kv_string_t::kv_string_size_t) strlen(str),
                 .str_ = str
         };
         return put_string(string);
@@ -188,9 +189,10 @@ namespace nokv {
         // 不更新crc，方便后面可以恢复
         auto prev_total_size = header_.size_;
 
-        header_.size_ = write_ptr == nullptr ? prev_total_size : write_ptr - begin - key.byte_size();
+        header_.size_ =
+                write_ptr == nullptr ? prev_total_size : write_ptr - begin - key.byte_size();
         header_.crc_ = 0;
-        memcpy(buf_, &header_, sizeof (header_));
+        memcpy(buf_, &header_, sizeof(header_));
 
         size_t new_size = 0;
 
@@ -225,7 +227,7 @@ namespace nokv {
             build_lru_cache(adjust_ptr, write_ptr);
             new_size = prev_total_size + (len + 1 - prev_size);
             header_.size_ = write_ptr - begin;
-            memcpy(buf_, &header_, sizeof (header_));
+            memcpy(buf_, &header_, sizeof(header_));
             goto do_write;
         }
 
@@ -236,7 +238,7 @@ namespace nokv {
         write_ptr[0] = type;
         is(write_ptr + 1);
         header_.size_ = new_size;
-        memcpy(buf_, &header_, sizeof (header_));
+        memcpy(buf_, &header_, sizeof(header_));
         lru_[key.str_] = save;
         return 0;
     }
@@ -508,10 +510,10 @@ namespace nokv {
         while (begin < end) {
             kv_string_t::from_stream(begin, &key);
             byte_t *data = begin + key.byte_size();
-            int entry_size = Entry::get_entry_size(data);
-            if (entry_size < 0) {
+            size_t entry_size = Entry::get_entry_size(data);
+            if (data + entry_size > end) {
                 /* invalid state */
-                LOGD("invalid state at: %d, begin %p, end %p", __LINE__, begin, end);
+                LOGD("invalid state at: %d, begin %p, end %p, key: %s", __LINE__, begin, end, key.str_);
 #ifdef NKV_UNIT_TEST
                 exit(1);
 #endif
@@ -539,7 +541,6 @@ namespace nokv {
 
     void Map::sync() {
         header_.crc_ = crc32(0, begin(), header_.size_);
-        LOGD("sync size: %d", header_.size_);
         memcpy(buf_, &header_, sizeof(Header));
     }
 
