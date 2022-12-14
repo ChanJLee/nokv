@@ -58,67 +58,7 @@ const char *fuck = "Mr. and Mrs. Dursley, of number four, Privet Drive, were pro
                    "When Mr. and Mrs. Dursley woke up on the dull, gray Tuesday our story starts, there was nothing about the cloudy sky outside to suggest that strange and mysterious things would soon be happening all over the country. Mr. Dursley hummed as he picked out his most boring tie for work, and Mrs. Dursley gossiped away happily as she wrestled a screaming Dudley into his high chair."
                    "None of them noticed a large, tawny owl flutter past the window.";
 
-struct MockData
-{
-    std::string key;
-    int type_;
-    union
-    {
-        kv_boolean_t boolean_;
-        kv_float_t float_;
-        kv_int32_t int32_;
-        kv_int64_t int64_;
-        kv_string_t string_;
-        kv_array_t array_;
-    } data_;
-
-    MockData(const std::string &key) : key(key) {}
-};
-
-#define PUSH_MOCK_DATA(prefix, type, v, tag) \
-    {                                        \
-        std::stringstream ss;                \
-        ss << prefix << i;                   \
-        MockData data(ss.str());             \
-        data.data_.type##_ = v;              \
-        data.type_ = tag;                    \
-        vec.push_back(data);                 \
-    }
-
-#define INSERT_KV(type, tag)                                          \
-    {                                                                 \
-        if (vec[i].type_ == tag)                                      \
-        {                                                             \
-            ScopedLock<KV, false> lock(*kv);                          \
-            kv->reload_if();                                          \
-            kv->put_##type(vec[i].key.c_str(), vec[i].data_.type##_); \
-            kv->flush();                                              \
-            continue;                                                 \
-        }                                                             \
-    }
-
-#define CHECK_KV(prefix, type, v)                                             \
-    {                                                                         \
-        std::stringstream ss;                                                 \
-        ss << prefix << i;                                                    \
-        const std::string &key = ss.str();                                    \
-        kv_##type##_t tmp;                                                    \
-        const char *k = key.c_str();                                          \
-        int code = 0;                                                         \
-        if (code = kv->get_##type(k, tmp))                                    \
-        {                                                                     \
-            printf("check key %s failed. code %d", k, code);                  \
-            exit(-1);                                                         \
-        }                                                                     \
-        if (tmp != v)                                                         \
-        {                                                                     \
-            std::cout << "check key: " << k << "failed"                       \
-                      << "except: " << v << ", actual: " << tmp << std::endl; \
-            exit(-1);                                                         \
-        }                                                                     \
-    }
-
-void subprocess(char *argv[], int start, int end)
+void write_proc(char *argv[], int start, int end)
 {
     if (signal(SIGSEGV, sighandler_dump_stack) == SIG_ERR)
         perror("signal failed");
@@ -138,7 +78,7 @@ void subprocess(char *argv[], int start, int end)
         kv->reload_if();
         std::stringstream ss;
         ss << "kv_int32_" << i;
-        const auto& key = ss.str();
+        const auto &key = ss.str();
         kv->put_int32(key.c_str(), i);
         kv->flush();
     }
@@ -148,11 +88,51 @@ void subprocess(char *argv[], int start, int end)
     exit(0);
 }
 
+void read_proc(char *argv[], int start, int end)
+{
+    if (signal(SIGSEGV, sighandler_dump_stack) == SIG_ERR)
+        perror("signal failed");
+
+    nokv::KV::init(argv[1]);
+    nokv::KV *kv = nokv::KV::create(argv[2]);
+
+    if (kv == nullptr)
+    {
+        std::cout << "fuck off, create kv failed, pid: " << getpid() << std::endl;
+        exit(SIGBUS);
+    }
+
+    std::cout << getpid() << " read from: " << start << " to " << end << std::endl;
+
+    int count = 0;
+    for (int i = start; i < end; ++i)
+    {
+        ScopedLock<KV, false> lock(*kv);
+        // kv->reload_if(); /* key */
+        std::stringstream ss;
+        ss << "kv_int32_" << i;
+        const auto &key = ss.str();
+        nokv::kv_int32_t v;
+        if (kv->get_int32(key.c_str(), v) == 0)
+        {
+            ++count;
+            if (v != i)
+            {
+                std::cerr << "check value failed" << std::endl;
+                exit(1);
+            }
+        }
+    }
+
+    nokv::KV::destroy(kv);
+    std::cout << getpid() << " read finished, get: " << count << std::endl;
+    exit(0);
+}
+
 int main(int argc, char *argv[])
 {
-
     int total = 20000;
-    int sub_size = 10;
+    int sub_size = 8;
     int step = total / sub_size;
 
     std::vector<pid_t> children;
@@ -161,12 +141,22 @@ int main(int argc, char *argv[])
         pid_t pid = fork();
         if (pid == 0)
         {
-            subprocess(argv, i * step, (i + 1) * step);
+            write_proc(argv, i * step, (i + 1) * step);
         }
         else
         {
             children.push_back(pid);
         }
+    }
+
+    pid_t pid = fork();
+    if (pid == 0)
+    {
+        read_proc(argv, 0, total);
+    }
+    else
+    {
+        children.push_back(pid);
     }
 
     int status;
@@ -220,14 +210,16 @@ int main(int argc, char *argv[])
     {
         std::stringstream ss;
         ss << "kv_int32_" << i;
-        const auto& key = ss.str();
+        const auto &key = ss.str();
         kv_int32_t v = 0;
-        if (kv->get_int32(key.c_str(), v)) {
+        if (kv->get_int32(key.c_str(), v))
+        {
             std::cerr << "check key: " << key << " failed" << std::endl;
             exit(1);
         }
 
-        if (v != i) {
+        if (v != i)
+        {
             std::cerr << "check key: " << key << "'s value failed" << std::endl;
             exit(1);
         }

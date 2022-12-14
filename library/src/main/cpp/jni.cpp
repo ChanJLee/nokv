@@ -46,8 +46,8 @@ Java_me_chan_nkv_NoKV_nativeGetInt(JNIEnv *env, jclass clazz, jlong ptr, jstring
                                    jint def_value) {
     auto kv = (nokv::KV *) ptr;
     DEF_C_STR(env, key, k);
-    nokv::kv_int32_t v = 0;
 
+    nokv::kv_int32_t v = 0;
     nokv::ScopedLock<nokv::KV, true> lock(*kv);
     if (kv->get_int32(k, v)) {
         return def_value;
@@ -61,8 +61,8 @@ Java_me_chan_nkv_NoKV_nativeGetBoolean(JNIEnv *env, jclass clazz, jlong ptr, jst
                                        jboolean def_value) {
     auto kv = (nokv::KV *) ptr;
     DEF_C_STR(env, key, k);
-    nokv::kv_boolean_t v = false;
 
+    nokv::kv_boolean_t v = false;
     nokv::ScopedLock<nokv::KV, true> lock(*kv);
     if (kv->get_boolean(k, v)) {
         return def_value;
@@ -76,6 +76,7 @@ Java_me_chan_nkv_NoKV_nativeGetLong(JNIEnv *env, jclass clazz, jlong ptr, jstrin
                                     jlong def_value) {
     auto kv = (nokv::KV *) ptr;
     DEF_C_STR(env, key, k);
+
     nokv::kv_int64_t v = 0;
     nokv::ScopedLock<nokv::KV, true> lock(*kv);
 
@@ -91,8 +92,8 @@ Java_me_chan_nkv_NoKV_nativeGetFloat(JNIEnv *env, jclass clazz, jlong ptr, jstri
                                      jfloat def_value) {
     auto kv = (nokv::KV *) ptr;
     DEF_C_STR(env, key, k);
-    nokv::kv_float_t v = 0;
 
+    nokv::kv_float_t v = 0;
     nokv::ScopedLock<nokv::KV, true> lock(*kv);
     if (kv->get_float(k, v)) {
         return def_value;
@@ -107,7 +108,7 @@ Java_me_chan_nkv_NoKV_nativeGetString(JNIEnv *env, jclass clazz, jlong ptr, jstr
     auto kv = (nokv::KV *) ptr;
     DEF_C_STR(env, key, k);
 
-    const char *v = {};
+    const char *v = NULL;
     nokv::ScopedLock<nokv::KV, true> lock(*kv);
 
     int code = 0;

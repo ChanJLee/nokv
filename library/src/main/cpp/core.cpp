@@ -138,7 +138,6 @@ namespace nokv {
             return;
         }
 
-        kv->flush();
         kv->close();
         delete kv;
     }
