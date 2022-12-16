@@ -16,9 +16,20 @@ A sp-like key-value library. Compatible with android native SharedPreferences.
 
 1. init
 ```java
+public class MyApplication extends Application {
+	@Override
+	public void onCreate() {
+		super.onCreate();
+		NoKV.init(this);
+	}
+}
 ```
 
 2. create
 ```java
-
+SharedPreferences sp = NoKV.create("fuck1", MODE_PRIVATE);
+SharedPreferences.Editor editor = sp.edit();
+editor.putInt("foo", 1);
+editor.commit();
+sp.getInt("foo", 0);
 ```
