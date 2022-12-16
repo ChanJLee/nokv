@@ -87,7 +87,7 @@ public class NoKV implements SharedPreferences {
 
 	@Override
 	public Editor edit() {
-		return new NoKvEditor(mPtr);
+		return new NoKvEditor(mPtr, mListeners);
 	}
 
 	@Override

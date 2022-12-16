@@ -17,9 +17,11 @@ class NoKvEditor implements SharedPreferences.Editor {
 	private final Map<String, Object> mModify = new HashMap<>();
 	private final Set<String> mDelete = new HashSet<>();
 	private boolean mClear = false;
+	private final Set<SharedPreferences.OnSharedPreferenceChangeListener> mListeners;
 
-	public NoKvEditor(long ptr) {
+	public NoKvEditor(long ptr, Set<SharedPreferences.OnSharedPreferenceChangeListener> listeners) {
 		mPtr = ptr;
+		mListeners = listeners;
 	}
 
 	@Override
