@@ -490,9 +490,16 @@ namespace nokv {
                         return 0;
                     }
 
+                    // todo support unit test
+                    auto prev_size = header_.size_;
+                    header_.crc_ = 0;
+                    header_.size_ = body - entry_key.byte_size() - begin();
+                    memcpy(buf_, &header_, sizeof(header_));
+
                     size_t count = entry_key.byte_size() + body_len;
                     memmove(body - entry_key.byte_size(), body + body_len, count);
-                    header_.size_ -= count;
+                    header_.size_ = prev_size - count;
+                    memcpy(buf_, &header_, sizeof(header_));
                     return 1;
                 });
     }
