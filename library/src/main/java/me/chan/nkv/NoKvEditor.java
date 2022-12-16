@@ -124,6 +124,10 @@ class NoKvEditor implements SharedPreferences.Editor {
 					if (!nativePutStringSet(mPtr, key, (Set<String>) value)) {
 						return false;
 					}
+				} else if (value == null) {
+					if (!nativePutNull(mPtr, key)) {
+						return false;
+					}
 				}
 				// todo unknown
 			}
@@ -159,4 +163,6 @@ class NoKvEditor implements SharedPreferences.Editor {
 	private static native boolean nativePutFloat(long ptr, String key, float value);
 
 	private static native boolean nativePutBoolean(long ptr, String key, boolean value);
+
+	private static native boolean nativePutNull(long ptr, String key);
 }

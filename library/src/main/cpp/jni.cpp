@@ -313,19 +313,19 @@ Java_me_chan_nkv_NoKV_nativeGetAll(JNIEnv *env, jclass clazz, jlong ptr) {
         } else if (type == nokv::TYPE_INT32) {
             env->CallObjectMethod(map, put_method, env->NewStringUTF(key.str_),
                                   env->CallStaticObjectMethod(Integer_clazz, Integer_valueof,
-                                                           entry->as_int32()));
+                                                              entry->as_int32()));
         } else if (type == nokv::TYPE_FLOAT) {
             env->CallObjectMethod(map, put_method, env->NewStringUTF(key.str_),
                                   env->CallStaticObjectMethod(Float_clazz, Float_valueof,
-                                                             entry->as_float()));
+                                                              entry->as_float()));
         } else if (type == nokv::TYPE_INT64) {
             env->CallObjectMethod(map, put_method, env->NewStringUTF(key.str_),
                                   env->CallStaticObjectMethod(Long_clazz, Long_valueof,
-                                                            entry->as_int64()));
+                                                              entry->as_int64()));
         } else if (type == nokv::TYPE_BOOLEAN) {
             env->CallObjectMethod(map, put_method, env->NewStringUTF(key.str_),
                                   env->CallStaticObjectMethod(Boolean_clazz, Boolean_valueof,
-                                                               entry->as_boolean()));
+                                                              entry->as_boolean()));
         } else if (type == nokv::TYPE_STRING) {
             env->CallObjectMethod(map, put_method, env->NewStringUTF(key.str_),
                                   env->NewStringUTF(entry->as_string().str_));
@@ -350,4 +350,13 @@ Java_me_chan_nkv_NoKV_nativeGetAll(JNIEnv *env, jclass clazz, jlong ptr) {
         }
     });
     return map;
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_me_chan_nkv_NoKvEditor_nativePutNull(JNIEnv *env, jclass clazz, jlong ptr, jstring key) {
+    auto kv = (nokv::KV *) ptr;
+    DEF_C_STR(env, key, k);
+
+    return kv->put_null(k) == 0;
 }
