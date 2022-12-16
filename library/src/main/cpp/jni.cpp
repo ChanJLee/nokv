@@ -312,19 +312,19 @@ Java_me_chan_nkv_NoKV_nativeGetAll(JNIEnv *env, jclass clazz, jlong ptr) {
             env->CallObjectMethod(map, put_method, env->NewStringUTF(key.str_), (jobject) nullptr);
         } else if (type == nokv::TYPE_INT32) {
             env->CallObjectMethod(map, put_method, env->NewStringUTF(key.str_),
-                                  env->CallStaticIntMethod(Integer_clazz, Integer_valueof,
+                                  env->CallStaticObjectMethod(Integer_clazz, Integer_valueof,
                                                            entry->as_int32()));
         } else if (type == nokv::TYPE_FLOAT) {
             env->CallObjectMethod(map, put_method, env->NewStringUTF(key.str_),
-                                  env->CallStaticFloatMethod(Float_clazz, Float_valueof,
+                                  env->CallStaticObjectMethod(Float_clazz, Float_valueof,
                                                              entry->as_float()));
         } else if (type == nokv::TYPE_INT64) {
             env->CallObjectMethod(map, put_method, env->NewStringUTF(key.str_),
-                                  env->CallStaticLongMethod(Long_clazz, Long_valueof,
+                                  env->CallStaticObjectMethod(Long_clazz, Long_valueof,
                                                             entry->as_int64()));
         } else if (type == nokv::TYPE_BOOLEAN) {
             env->CallObjectMethod(map, put_method, env->NewStringUTF(key.str_),
-                                  env->CallStaticBooleanMethod(Boolean_clazz, Boolean_valueof,
+                                  env->CallStaticObjectMethod(Boolean_clazz, Boolean_valueof,
                                                                entry->as_boolean()));
         } else if (type == nokv::TYPE_STRING) {
             env->CallObjectMethod(map, put_method, env->NewStringUTF(key.str_),

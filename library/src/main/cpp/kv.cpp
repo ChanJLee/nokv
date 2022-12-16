@@ -543,6 +543,7 @@ namespace nokv {
         // todo test only clear all
         header_.crc_ = 0;
         header_.size_ = 0;
+        memcpy(buf_, &header_, sizeof(Header));
         return 0;
     }
 
