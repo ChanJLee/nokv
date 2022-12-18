@@ -139,7 +139,7 @@ namespace nokv {
         char magic_[4] = {'n', 'o', 'k', 'v'};
         uint16_t order_ = 0x1234;
         uint16_t version_ = 0x0100;
-        uint32_t crc_ = 0; /* todo remove */
+        uint32_t crc_ = 0;
         uint32_t size_ = 0;
     } __attribute__ ((aligned (4)));
 

@@ -6,8 +6,8 @@
 #define NKV_CORE_H
 
 #include "lock.h"
-#include "kv.h" /* todo hide */
-#include "meta.h" /* todo hide */
+#include "kv.h"
+#include "meta.h"
 #include <string>
 #include <functional>
 

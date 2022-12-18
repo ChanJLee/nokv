@@ -112,7 +112,6 @@ namespace nokv {
         meta.update(fd, st);
         KV *kv = new KV(fd, name, file_lock.release(), meta);
         if (new_file) {
-            // todo support unit test only once
             LOGD("init buf");
             kv->init_buf(mem, st.st_size);
             return kv;
@@ -126,7 +125,6 @@ namespace nokv {
             lock.~ScopedLock<nokv::Lock, false>();
             delete kv;
             ::remove(file);
-            // todo remove meta
             return nullptr;
         }
 
@@ -270,7 +268,6 @@ namespace nokv {
         if (st.st_size < size) {
             fill_zero(fd_, st.st_size, size - st.st_size);
         } else if (st.st_size > size) {
-            // TODO return direct
             ftruncate(fd_, size);
         } else {
             LOGD("do noting, size is equal to %d", size);
