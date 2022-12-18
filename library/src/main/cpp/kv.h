@@ -27,6 +27,7 @@ namespace nokv {
     const int ERROR_TYPE_ERROR = -3;
     const int ERROR_INVALID_STATE = -4;
     const int ERROR_MAP_FAILED = -5;
+    const int ERROR_INVALID_ARGUMENTS = -6;
     const int VALUE_NULL = 1;
 
     typedef bool kv_boolean_t;
@@ -42,11 +43,12 @@ namespace nokv {
 
         int to_stream(byte_t *stream) const;
 
-        // todo support from c style str
-        static int from_stream(byte_t *stream, kv_string_t *str);
+        static int from_stream(byte_t *stream, kv_string_t &str);
+
+        static int from_c_str(const char *s, kv_string_t &str);
 
         /* with bound check */
-        static int from_stream_safe(byte_t *stream, kv_string_t *str, byte_t *end);
+        static int from_stream_safe(byte_t *stream, kv_string_t &str, byte_t *end);
 
         size_t byte_size() const { return size_ + sizeof(size_) + 1; }
     };
@@ -61,7 +63,7 @@ namespace nokv {
         /* 1u + 4u + elements */
         byte_t *begin_;
 
-        static int from_stream(byte_t *stream, kv_array_t *array);
+        static int from_stream(byte_t *stream, kv_array_t &array);
 
         int to_stream(byte_t *stream) const;
 

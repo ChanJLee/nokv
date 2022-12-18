@@ -43,11 +43,11 @@ namespace nokv {
         }
 
         if (entry->type_ == TYPE_STRING) {
-            return kv_string_t::from_stream(stream + 1, &entry->data_.string_);
+            return kv_string_t::from_stream(stream + 1, entry->data_.string_);
         }
 
         if (entry->type_ == TYPE_ARRAY) {
-            return nokv::kv_array_t::from_stream(stream + 1, &entry->data_.array_);
+            return nokv::kv_array_t::from_stream(stream + 1, entry->data_.array_);
         }
 
         int size = get_entry_size(stream);
@@ -59,10 +59,10 @@ namespace nokv {
         return 0;
     }
 
-    int nokv::kv_array_t::from_stream(nokv::byte_t *stream, nokv::kv_array_t *array) {
-        memcpy(&array->capacity_, stream, 4);
-        array->begin_ = stream + 4;
-        array->end_ = array->begin_ + array->capacity_;
+    int nokv::kv_array_t::from_stream(nokv::byte_t *stream, nokv::kv_array_t &array) {
+        memcpy(&array.capacity_, stream, 4);
+        array.begin_ = stream + 4;
+        array.end_ = array.begin_ + array.capacity_;
         return 0;
     }
 
@@ -253,7 +253,7 @@ namespace nokv {
             byte_t *end = this->end();
             if (cache >= begin() && cache < end) {
                 kv_string_t temp = {};
-                if (kv_string_t::from_stream_safe(cache, &temp, end) == 0 &&
+                if (kv_string_t::from_stream_safe(cache, temp, end) == 0 &&
                     key.size_ == temp.size_ &&
                     strncmp(key.str_, temp.str_, key.size_) == 0) {
                     *ret = cache + key.byte_size();
@@ -515,7 +515,7 @@ namespace nokv {
         kv_string_t key = {};
 
         while (begin < end) {
-            kv_string_t::from_stream(begin, &key);
+            kv_string_t::from_stream(begin, key);
             byte_t *data = begin + key.byte_size();
             size_t entry_size = Entry::get_entry_size(data);
             if (data + entry_size > end) {
@@ -581,20 +581,29 @@ namespace nokv {
         return 0;
     }
 
-    int kv_string_t::from_stream(byte_t *stream, kv_string_t *str) {
-        memcpy(&str->size_, stream, 4);
-        str->str_ = (const char *) (stream + sizeof(str->size_));
+    int kv_string_t::from_stream(byte_t *stream, kv_string_t &str) {
+        memcpy(&str.size_, stream, 4);
+        str.str_ = (const char *) (stream + sizeof(str.size_));
         return 0;
     }
 
-    int kv_string_t::from_stream_safe(byte_t *stream, kv_string_t *str, byte_t *end) {
-        memcpy(&str->size_, stream, 4);
-        byte_t *str_end = stream + str->size_ + 4;
+    int kv_string_t::from_stream_safe(byte_t *stream, kv_string_t &str, byte_t *end) {
+        memcpy(&str.size_, stream, 4);
+        byte_t *str_end = stream + str.size_ + 4;
         if (str_end >= end && *str_end != '\0') {
             return ERROR_INVALID_STATE;
         }
 
-        str->str_ = (const char *) (stream + sizeof(str->size_));
+        str.str_ = (const char *) (stream + sizeof(str.size_));
+        return 0;
+    }
+
+    int kv_string_t::from_c_str(const char *s, kv_string_t &str) {
+        if (s == nullptr) {
+            return ERROR_INVALID_ARGUMENTS;
+        }
+        str.size_ = strlen(s);
+        str.str_ = s;
         return 0;
     }
 }
