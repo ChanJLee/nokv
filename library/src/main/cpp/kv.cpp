@@ -123,9 +123,8 @@ namespace nokv {
 
     int kv_array_t::put_string(const char *str) {
         kv_string_t string = {
-                .size_ = (kv_string_t::kv_string_size_t) strlen(str),
-                .str_ = str
         };
+        kv_string_t::from_c_str(str, string);
         return put_string(string);
     }
 
