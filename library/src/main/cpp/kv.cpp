@@ -19,17 +19,12 @@ namespace nokv {
             case nokv::TYPE_INT64:
                 return 9;
             case nokv::TYPE_STRING: {
-                kv_string_t::kv_string_size_t size = 0;
-                memcpy(&size, entry + 1, sizeof(size));
-                return sizeof(kv_string_t::kv_string_size_t) /* str len */ + size + 1 /* \0 */ +
-                       1 /* tag */;
+                return kv_string_t::get_entry_size(entry + 1);
             }
             case nokv::TYPE_NULL:
                 return 1;
             case nokv::TYPE_ARRAY: {
-                kv_array_t::kv_array_size_t size = 0;
-                memcpy(&size, entry + 1, sizeof(size));
-                return size + 1 + sizeof(kv_array_t::kv_array_size_t);
+                return kv_array_t::get_entry_size(entry + 1);
             }
         }
 
@@ -126,6 +121,12 @@ namespace nokv {
         };
         kv_string_t::from_c_str(str, string);
         return put_string(string);
+    }
+
+    size_t kv_array_t::get_entry_size(byte_t *entry) {
+        kv_array_t::kv_array_size_t size = 0;
+        memcpy(&size, entry, sizeof(size));
+        return size + 1 + sizeof(kv_array_t::kv_array_size_t);
     }
 
     int nokv::Map::put_array(const kv_string_t &key, const nokv::kv_array_t &array) {
@@ -604,5 +605,12 @@ namespace nokv {
         str.size_ = strlen(s);
         str.str_ = s;
         return 0;
+    }
+
+    size_t kv_string_t::get_entry_size(byte_t *entry) {
+        kv_string_t::kv_string_size_t size = 0;
+        memcpy(&size, entry, sizeof(size));
+        return sizeof(kv_string_t::kv_string_size_t) /* str len */ + size + 1 /* \0 */ +
+               1 /* tag */;
     }
 }

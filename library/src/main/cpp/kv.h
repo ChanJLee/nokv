@@ -51,6 +51,8 @@ namespace nokv {
         static int from_stream_safe(byte_t *stream, kv_string_t &str, byte_t *end);
 
         size_t byte_size() const { return size_ + sizeof(size_) + 1; }
+
+        static size_t get_entry_size(byte_t *);
     };
 
     struct Entry;
@@ -91,6 +93,8 @@ namespace nokv {
         };
 
         iterator it() const { return iterator(begin_, end_); }
+
+        static size_t get_entry_size(byte_t *);
 
     private:
         int put_string(const kv_string_t &);
