@@ -14,14 +14,21 @@ import java.util.Set;
 @Keep
 class NoKvEditor implements SharedPreferences.Editor {
 	private final long mPtr;
-	private final Map<String, Object> mModify = new HashMap<>();
+	private final Map<String, Object> mModify;
 	private final Set<String> mDelete = new HashSet<>();
 	private boolean mClear = false;
 	private final Set<SharedPreferences.OnSharedPreferenceChangeListener> mListeners;
 
-	public NoKvEditor(long ptr, Set<SharedPreferences.OnSharedPreferenceChangeListener> listeners) {
+	NoKvEditor(long ptr, Set<SharedPreferences.OnSharedPreferenceChangeListener> listeners) {
 		mPtr = ptr;
 		mListeners = listeners;
+		mModify = new HashMap<>();
+	}
+
+	NoKvEditor(Map<String, Object> values, long ptr, Set<SharedPreferences.OnSharedPreferenceChangeListener> listeners) {
+		mPtr = ptr;
+		mListeners = listeners;
+		mModify = values;
 	}
 
 	@Override

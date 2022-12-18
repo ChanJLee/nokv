@@ -137,4 +137,18 @@ public class NoKV implements SharedPreferences {
 	private static void e(String msg) {
 		Log.e("NoKV", msg);
 	}
+
+	public boolean migrate(SharedPreferences sharedPreferences) {
+		if (sharedPreferences == null) {
+			return false;
+		}
+
+		Map<String, Object> values = (Map<String, Object>) sharedPreferences.getAll();
+		if (values == null) {
+			return false;
+		}
+
+		Editor editor = new NoKvEditor(values, mPtr, mListeners);
+		return editor.commit();
+	}
 }
