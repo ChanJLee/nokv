@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <stddef.h>
+#include <set>
 
 void print_trace(void)
 {
@@ -149,15 +150,15 @@ int main(int argc, char *argv[])
         }
     }
 
-//    pid_t pid = fork();
-//    if (pid == 0)
-//    {
-//        read_proc(argv, 0, total);
-//    }
-//    else
-//    {
-//        children.push_back(pid);
-//    }
+    pid_t pid = fork();
+    if (pid == 0)
+    {
+        read_proc(argv, 0, total);
+    }
+    else
+    {
+        children.push_back(pid);
+    }
 
     int status;
     int w;
@@ -202,9 +203,20 @@ int main(int argc, char *argv[])
     nokv::KV::init(argv[1]);
     nokv::KV *kv = nokv::KV::create(argv[2]);
 
-//     kv->read_all([=](const nokv::kv_string_t& key, nokv::Entry *entry) {
-//         std::cout << key.str_ << " " << entry->as_int32() << std::endl;
-//     });
+    std::set<std::string> set;
+    kv->read_all([&](const nokv::kv_string_t &key, nokv::Entry *entry) -> void { 
+        std::string s(key.str_);
+        const auto& res = set.insert(s);
+        if (!res.second) {
+            std::cerr << "check kv entry failed: " << s << std::endl;
+            exit(1);
+        }
+    });
+
+    if (set.size() != total) {
+        std::cerr << "check kv count failed" << std::endl;
+        exit(1);
+    }
 
     for (int i = 0; i < total; ++i)
     {
