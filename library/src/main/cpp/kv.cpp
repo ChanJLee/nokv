@@ -224,12 +224,12 @@ namespace nokv {
         is(write_ptr + 1);
         header_.size_ = new_size;
         memcpy(buf_, &header_, sizeof(header_));
-        mem_cache_[key.str_] = save;
+        mem_cache_[key] = save;
         return 0;
     }
 
     int Map::get_value(const kv_string_t &key, byte_t **ret) {
-        const auto &it = mem_cache_.find(key.str_);
+        const auto &it = mem_cache_.find(key);
         if (it == mem_cache_.end()) {
             return ERROR_NOT_FOUND;
         }
@@ -476,7 +476,7 @@ namespace nokv {
         header_.size_ = prev_size - count;
         memcpy(buf_, &header_, sizeof(header_));
 
-        mem_cache_.erase(key.str_);
+        mem_cache_.erase(key);
         int offset = count;
         invalid_mem_cache(ret, -offset);
         return 0;
@@ -533,7 +533,7 @@ namespace nokv {
 
     void Map::build_mem_cache(byte_t *begin, byte_t *end) {
         read_all(begin, end, [=](const kv_string_t &key, byte_t *body, size_t) -> int {
-            mem_cache_[key.str_] = body - key.byte_size();
+            mem_cache_[key] = body - key.byte_size();
             return 0;
         });
     }
@@ -541,7 +541,8 @@ namespace nokv {
     void Map::invalid_mem_cache(const byte_t *const begin, int offset) {
         std::for_each(mem_cache_.begin(), mem_cache_.end(), [=](kv_cache_value_t &v) {
             if (v.second >= begin) {
-                void* ptr = v.second;
+                auto& key = const_cast<kv_string_t &>(v.first);
+                key.str_ += offset;
                 v.second += offset;
             }
         });

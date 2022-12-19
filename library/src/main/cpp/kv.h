@@ -156,23 +156,22 @@ namespace nokv {
         template<class _Tp>
         struct predicate : public std::binary_function<_Tp, _Tp, bool> {
             bool operator()(const _Tp &__x, const _Tp &__y) const {
-                return __x == __y || strcmp(__x, __y) == 0;
+                return __x.size_ == __y.size_ && strncmp(__x.str_, __y.str_, __x.size_);
             }
         };
 
         struct hash {
-            size_t operator()(const char *str) const {
+            size_t operator()(const kv_string_t& key) const {
                 int seed = 31;
                 size_t hash = 0;
-                while (*str) {
-                    hash = (hash * seed) + (*str);
-                    str++;
+                for (kv_string_t::kv_string_size_t i = 0; i < key.size_; ++i) {
+                    hash = (hash * seed) + key.str_[i];
                 }
                 return hash;
             }
         };
 
-        typedef std::unordered_map<const char *, byte_t *, hash, predicate<const char *>> kv_mem_cache_t;
+        typedef std::unordered_map<kv_string_t, byte_t *, hash, predicate<kv_string_t>> kv_mem_cache_t;
         typedef kv_mem_cache_t::value_type kv_cache_value_t;
         kv_mem_cache_t mem_cache_;
     public:
