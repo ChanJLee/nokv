@@ -224,7 +224,7 @@ namespace nokv {
 #ifdef NKV_UNIT_TEST
             LOGD("invalid cache: %d, new size %d, %p %p", (adjust_ptr - begin), (write_ptr - begin), adjust_ptr, write_ptr);
 #endif
-            build_lru_cache(adjust_ptr, write_ptr);
+            invalid_cache(adjust_ptr, write_ptr);
             new_size = prev_total_size + (len + 1 - prev_size);
             header_.size_ = write_ptr - begin;
             memcpy(buf_, &header_, sizeof(header_));
@@ -239,58 +239,34 @@ namespace nokv {
         is(write_ptr + 1);
         header_.size_ = new_size;
         memcpy(buf_, &header_, sizeof(header_));
-        lru_[key.str_] = save;
+        cache_[key.str_] = save;
         return 0;
     }
 
     int Map::get_value(const kv_string_t &key, byte_t **ret) {
-#ifdef BAY_PERFORMACE_DEBUG
-        ++__get_count;
-#endif
-        int code = ERROR_NOT_FOUND;
+        const auto &it = cache_.find(key.str_);
+        if (it == cache_.end()) {
+            return ERROR_NOT_FOUND;
+        }
 
-        const auto &it = lru_.find(key.str_);
-        if (it != lru_.end()) {
-            // cache hit
-            byte_t *cache = it->second;
-            byte_t *end = this->end();
-            if (cache >= begin() && cache < end) {
-                kv_string_t temp = {};
-                if (kv_string_t::from_stream_safe(cache, temp, end) == 0 &&
-                    key.size_ == temp.size_ &&
-                    strncmp(key.str_, temp.str_, key.size_) == 0) {
-                    *ret = cache + key.byte_size();
-#ifdef BAY_PERFORMACE_DEBUG
-                    ++__hit_count;
-                    LOGD("get_api, get %d, hit %d, ratio: %f", __get_count, __hit_count,
-                         __hit_count * 1.0f / __get_count);
-#endif
-                    return 0;
-                }
+        // cache hit
+        byte_t *cache = it->second;
+        byte_t *end = this->end();
+        if (cache >= begin() && cache < end) {
+            kv_string_t temp = {};
+            if (kv_string_t::from_stream_safe(cache, temp, end) == 0 &&
+                key.size_ == temp.size_ &&
+                strncmp(key.str_, temp.str_, key.size_) == 0) {
+                *ret = cache + key.byte_size();
+                return 0;
             }
         }
 
-        read_all(
-                [&](const kv_string_t &entry_key, byte_t *body,
-                    size_t body_len) -> int {
-                    if (key.size_ != entry_key.size_ ||
-                        strncmp(key.str_, entry_key.str_, key.size_) != 0) {
-                        return 0;
-                    }
-
-                    lru_[key.str_] = body - key.byte_size();
-                    *ret = body;
-                    code = 0;
-                    return 1;
-                }
-        );
-
-#ifdef BAY_PERFORMACE_DEBUG
-        LOGD("get_api, get %d, hit %d, ratio: %f", __get_count, __hit_count,
-             __hit_count * 1.0f / __get_count);
+#if defined(NKV_UNIT_TEST) || defined(BAY_DEBUG)
+        LOGD("get_value invalid state");
+        exit(1);
 #endif
-        /* not found */
-        return code;
+        return ERROR_INVALID_STATE;
     }
 
     int Map::get_boolean(const kv_string_t &key, kv_boolean_t &rtn) {
@@ -494,6 +470,7 @@ namespace nokv {
             return 0;
         }
 
+        // todo
         return read_all(
                 [&](const kv_string_t &entry_key, byte_t *body,
                     size_t body_len) -> int {
@@ -555,6 +532,7 @@ namespace nokv {
         // todo test only clear all
         header_.crc_ = 0;
         header_.size_ = 0;
+        cache_.clear();
         memcpy(buf_, &header_, sizeof(Header));
         return 0;
     }
@@ -564,9 +542,9 @@ namespace nokv {
         memcpy(buf_, &header_, sizeof(Header));
     }
 
-    void Map::build_lru_cache(byte_t *begin, byte_t *end) {
+    void Map::invalid_cache(byte_t *begin, byte_t *end) {
         read_all(begin, end, [=](const kv_string_t &key, byte_t *body, size_t) -> int {
-            lru_[key.str_] = body - key.byte_size();
+            cache_[key.str_] = body - key.byte_size();
             return 0;
         });
     }

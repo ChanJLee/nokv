@@ -153,11 +153,6 @@ namespace nokv {
         byte_t *begin_;
         byte_t *buf_;
 
-#ifdef BAY_PERFORMACE_DEBUG
-        uint32_t __get_count = 0;
-        uint32_t __hit_count = 0;
-#endif
-
         template<class _Tp>
         struct predicate : public std::binary_function<_Tp, _Tp, bool> {
             bool operator()(const _Tp &__x, const _Tp &__y) const {
@@ -177,7 +172,7 @@ namespace nokv {
             }
         };
 
-        std::unordered_map<const char *, byte_t *, hash, predicate<const char *>> lru_;
+        std::unordered_map<const char *, byte_t *, hash, predicate<const char *>> cache_;
     public:
         // 初始化一块内存
         void init(byte_t *buf, uint32_t size) {
@@ -185,7 +180,7 @@ namespace nokv {
             capacity_ = size - sizeof(Header);
             begin_ = buf + sizeof(Header);
             buf_ = buf;
-            lru_.clear();
+            cache_.clear();
         }
 
         // 和一块内存绑定
@@ -194,8 +189,8 @@ namespace nokv {
             capacity_ = size - sizeof(Header);
             begin_ = buf + sizeof(Header);
             buf_ = buf;
-            lru_.clear();
-            build_lru_cache(this->begin(), this->end());
+            cache_.clear();
+            invalid_cache(this->begin(), this->end());
         }
 
         byte_t *begin() { return begin_; }
@@ -259,7 +254,7 @@ namespace nokv {
                 byte_t *begin, byte_t *end,
                 const std::function<int(const kv_string_t &, byte_t *, size_t)> &fnc);
 
-        void build_lru_cache(byte_t *begin, byte_t *end);
+        void invalid_cache(byte_t *begin, byte_t *end);
     };
 }
 
