@@ -254,8 +254,7 @@ namespace nokv {
             return ERROR_INVALID_STATE;
         }
 
-        munmap(buf_, map_.capacity());
-        void *mem = mmap(NULL, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, 0);
+        void *mem = mmap(buf_, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, 0);
         if (mem == MAP_FAILED || mem == nullptr) {
             LOGI("resize mmap failed");
             return ERROR_MAP_FAILED;

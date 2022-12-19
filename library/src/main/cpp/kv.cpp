@@ -244,6 +244,9 @@ namespace nokv {
     }
 
     int Map::get_value(const kv_string_t &key, byte_t **ret) {
+#ifdef BAY_PERFORMACE_DEBUG
+        ++__get_count;
+#endif
         int code = ERROR_NOT_FOUND;
 
         const auto &it = lru_.find(key.str_);
@@ -257,6 +260,11 @@ namespace nokv {
                     key.size_ == temp.size_ &&
                     strncmp(key.str_, temp.str_, key.size_) == 0) {
                     *ret = cache + key.byte_size();
+#ifdef BAY_PERFORMACE_DEBUG
+                    ++__hit_count;
+                    LOGD("get_api, get %d, hit %d, ratio: %f", __get_count, __hit_count,
+                         __hit_count * 1.0f / __get_count);
+#endif
                     return 0;
                 }
             }
@@ -277,6 +285,10 @@ namespace nokv {
                 }
         );
 
+#ifdef BAY_PERFORMACE_DEBUG
+        LOGD("get_api, get %d, hit %d, ratio: %f", __get_count, __hit_count,
+             __hit_count * 1.0f / __get_count);
+#endif
         /* not found */
         return code;
     }

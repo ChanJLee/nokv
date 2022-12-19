@@ -153,6 +153,11 @@ namespace nokv {
         byte_t *begin_;
         byte_t *buf_;
 
+#ifdef BAY_PERFORMACE_DEBUG
+        uint32_t __get_count = 0;
+        uint32_t __hit_count = 0;
+#endif
+
         template<class _Tp>
         struct predicate : public std::binary_function<_Tp, _Tp, bool> {
             bool operator()(const _Tp &__x, const _Tp &__y) const {
