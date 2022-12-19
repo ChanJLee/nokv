@@ -43,27 +43,6 @@ namespace nokv {
         return crc != kv->map_.crc();
     }
 
-    void fill_zero(int fd, uint32_t start, size_t len) {
-        if (len == 0) {
-            return;
-        }
-
-        lseek(fd, start, SEEK_SET);
-        constexpr static const size_t _buf_size = 4096;
-        byte_t buf[_buf_size] = {0};
-
-        uint64_t actual = (len + _buf_size - 1) & ~(_buf_size - 1); /* avoid overflow */
-        uint64_t size = actual / _buf_size;
-
-        uint32_t left = len;
-        for (uint64_t i = 0; i < size; ++i) {
-            ::write(fd, buf, left < _buf_size ? left : _buf_size);
-            left -= _buf_size;
-        }
-        lseek(fd, 0, SEEK_SET);
-        fsync(fd);
-    }
-
     KV *KV::create(const char *name) {
         if (gLock == nullptr) {
             LOGD("init module first!");
@@ -98,8 +77,7 @@ namespace nokv {
         if (new_file) {
             size_t size = getpagesize();
             st.st_size = size;
-            // avoid BUS error
-            fill_zero(fd, 0, size);
+            ftruncate(fd, st.st_size);
         }
 
         void *mem = mmap(nullptr, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
@@ -265,9 +243,7 @@ namespace nokv {
             return ERROR_INVALID_STATE;
         }
 
-        if (st.st_size < size) {
-            fill_zero(fd_, st.st_size, size - st.st_size);
-        } else if (st.st_size > size) {
+        if (st.st_size != size) {
             ftruncate(fd_, size);
         } else {
             LOGD("do noting, size is equal to %d", size);
