@@ -24,7 +24,9 @@ public class NoKV implements SharedPreferences {
 			@Override
 			public boolean load(Context context, String... so) {
 				try {
-					System.loadLibrary(so[0]);
+					for (String s : so) {
+						System.loadLibrary(s);
+					}
 					return true;
 				} catch (Throwable throwable) {
 					return false;
