@@ -12,9 +12,9 @@
 
 extern "C"
 JNIEXPORT jlong JNICALL
-Java_me_chan_nkv_NoKV_nativeCreate(JNIEnv *env, jclass clazz, jstring kv) {
-    DEF_C_STR(env, kv, kv_path);
-    return (jlong) nokv::KV::create(kv_path);
+Java_me_chan_nkv_NoKV_nativeCreate(JNIEnv *env, jclass clazz, jstring ws) {
+    DEF_C_STR(env, ws, ws_path);
+    return (jlong) nokv::KV::create(ws_path);
 }
 
 extern "C"

@@ -13,23 +13,41 @@ import java.util.Map;
 import java.util.Set;
 
 public class NoKV implements SharedPreferences {
-	static {
-		System.loadLibrary("nokv");
-	}
-
 	@SuppressLint("StaticFieldLeak")
 	private static Context sContext;
+	private static boolean sInitSuccess = false;
 
 	public static void init(Context context) {
+		init(context, new LibraryLoader() {
+			@Override
+			public boolean load(Context context, String... so) {
+				try {
+					System.loadLibrary(so[0]);
+					return true;
+				} catch (Throwable throwable) {
+					return false;
+				}
+			}
+		});
+	}
+
+	public static void init(Context context, LibraryLoader loader) {
+		if (sInitSuccess) {
+			throw new IllegalStateException("nokv init twice");
+		}
+
 		sContext = context;
 		File ws = context.getDir("nokv", Context.MODE_PRIVATE);
-		if (nativeInit(ws.getAbsolutePath()) != 0) {
+		if (!loader.load(context, "nokv") || nativeInit(ws.getAbsolutePath()) != 0) {
 			e("init nokv failed");
+			return;
 		}
+
+		sInitSuccess = true;
 	}
 
 	public static SharedPreferences create(String name, int mode) {
-		long ptr = nativeCreate(name);
+		long ptr = sInitSuccess ? nativeCreate(name) : 0;
 		if (ptr == 0) {
 			return sContext.getSharedPreferences(name, mode);
 		}
@@ -112,7 +130,7 @@ public class NoKV implements SharedPreferences {
 		super.finalize();
 	}
 
-	private static native long nativeCreate(String kv);
+	private static native long nativeCreate(String ws);
 
 	private static native int nativeInit(String ws);
 
@@ -138,6 +156,10 @@ public class NoKV implements SharedPreferences {
 		Log.e("NoKV", msg);
 	}
 
+	/**
+	 * @param sharedPreferences sp
+	 * @return 是否迁移成功
+	 */
 	public boolean migrate(SharedPreferences sharedPreferences) {
 		if (sharedPreferences == null) {
 			return false;
@@ -150,5 +172,9 @@ public class NoKV implements SharedPreferences {
 
 		Editor editor = new NoKvEditor(values, mPtr, mListeners);
 		return editor.commit();
+	}
+
+	public interface LibraryLoader {
+		boolean load(Context context, String... so);
 	}
 }

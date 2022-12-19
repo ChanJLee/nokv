@@ -147,7 +147,6 @@ class NoKvEditor implements SharedPreferences.Editor {
 
 	@Override
 	public void apply() {
-		// todo async
 		commit();
 	}
 
