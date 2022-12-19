@@ -18,11 +18,11 @@ namespace nokv {
         Map map_;
         byte_t *buf_;
         KVMeta meta_;
-        std::string name_;
-        KV(int fd, const char *name, Lock *lock, const nokv::KVMeta &meta) : lock_(lock), fd_(fd),
-                                                                             map_(),
-                                                                             meta_(meta),
-                                                                             name_(name) {
+
+        KV(int fd, const char *name, Lock *lock, const nokv::KVMeta &meta)
+                : lock_(lock), fd_(fd),
+                  map_(),
+                  meta_(meta) {
         }
 
         ~KV() { delete lock_; }
@@ -36,6 +36,7 @@ namespace nokv {
         void bind_buf(void *buf, size_t size);
 
         int put_string(const char *const, const kv_string_t &);
+
     public:
         void lock(bool share) {
             lock_->lock(share);
