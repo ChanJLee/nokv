@@ -8,6 +8,7 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -16,6 +17,7 @@ public class NoKV implements SharedPreferences {
 	@SuppressLint("StaticFieldLeak")
 	private static Context sContext;
 	private static boolean sInitSuccess = false;
+	private static final Map<String, NoKV> LRU = new HashMap<>();
 
 	public static void init(Context context) {
 		init(context, new LibraryLoader() {
@@ -36,7 +38,7 @@ public class NoKV implements SharedPreferences {
 			throw new IllegalStateException("nokv init twice");
 		}
 
-		sContext = context;
+		sContext = context.getApplicationContext();
 		File ws = context.getDir("nokv", Context.MODE_PRIVATE);
 		if (!loader.load(context, "nokv") || nativeInit(ws.getAbsolutePath()) != 0) {
 			e("init nokv failed");
@@ -46,12 +48,20 @@ public class NoKV implements SharedPreferences {
 		sInitSuccess = true;
 	}
 
-	public static SharedPreferences create(String name, int mode) {
+	public static synchronized SharedPreferences create(String name, int mode) {
+		NoKV kv = LRU.get(name);
+		if (kv != null) {
+			return kv;
+		}
+
 		long ptr = sInitSuccess ? nativeCreate(name) : 0;
 		if (ptr == 0) {
 			return sContext.getSharedPreferences(name, mode);
 		}
-		return new NoKV(ptr);
+
+		kv = new NoKV(ptr);
+		LRU.put(name, kv);
+		return kv;
 	}
 
 	private final long mPtr;
