@@ -156,7 +156,7 @@ namespace nokv {
         template<class _Tp>
         struct predicate : public std::binary_function<_Tp, _Tp, bool> {
             bool operator()(const _Tp &__x, const _Tp &__y) const {
-                return __x.size_ == __y.size_ && strncmp(__x.str_, __y.str_, __x.size_);
+                return __x.size_ == __y.size_ && (__x.str_ == __y.str_ || strncmp(__x.str_, __y.str_, __x.size_) == 0);
             }
         };
 
@@ -198,7 +198,9 @@ namespace nokv {
 
         byte_t *end() { return begin_ + header_.size_; }
 
-        uint32_t size() const { return header_.size_; }
+        uint32_t size() const { return mem_cache_.size(); }
+
+        uint32_t byte_size() const { return header_.size_; }
 
         uint32_t capacity() const { return capacity_; }
 

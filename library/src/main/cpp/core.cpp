@@ -38,7 +38,7 @@ namespace nokv {
         }
 
         byte_t *begin = kv->map_.begin();
-        uint32_t crc = crc32(0, begin, kv->map_.size());
+        uint32_t crc = crc32(0, begin, kv->map_.byte_size());
         LOGD("prev crc: 0x%x, current crc: 0x%x", kv->map_.crc(), crc);
         return crc != kv->map_.crc();
     }
