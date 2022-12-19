@@ -470,27 +470,29 @@ namespace nokv {
             return 0;
         }
 
-        // todo
-        return read_all(
-                [&](const kv_string_t &entry_key, byte_t *body,
-                    size_t body_len) -> int {
-                    if (key.size_ != entry_key.size_ ||
-                        strncmp(key.str_, entry_key.str_, key.size_) != 0) {
-                        return 0;
-                    }
+        byte_t *ret = NULL;
+        int code = get_value(key, &ret);
+        if (code == 0) {
+            return 0;
+        }
 
-                    // todo support unit test
-                    auto prev_size = header_.size_;
-                    header_.crc_ = 0;
-                    header_.size_ = body - entry_key.byte_size() - begin();
-                    memcpy(buf_, &header_, sizeof(header_));
+        if (code != ERROR_NOT_FOUND) {
+            return code;
+        }
 
-                    size_t count = entry_key.byte_size() + body_len;
-                    memmove(body - entry_key.byte_size(), body + body_len, count);
-                    header_.size_ = prev_size - count;
-                    memcpy(buf_, &header_, sizeof(header_));
-                    return 1;
-                });
+        auto prev_size = header_.size_;
+        header_.crc_ = 0;
+        header_.size_ = ret - key.byte_size() - begin();
+        memcpy(buf_, &header_, sizeof(header_));
+
+        auto body_len = Entry::get_entry_size(ret);
+        size_t count = key.byte_size() + body_len;
+        memmove(ret - key.byte_size(), ret + body_len, count);
+        header_.size_ = prev_size - count;
+        memcpy(buf_, &header_, sizeof(header_));
+
+        cache_.erase(key.str_);
+        return 0;
     }
 
     int Map::read_all(
