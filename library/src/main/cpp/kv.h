@@ -172,7 +172,9 @@ namespace nokv {
             }
         };
 
-        std::unordered_map<const char *, byte_t *, hash, predicate<const char *>> cache_;
+        typedef std::unordered_map<const char *, byte_t *, hash, predicate<const char *>> kv_mem_cache_t;
+        typedef kv_mem_cache_t::value_type kv_cache_value_t;
+        kv_mem_cache_t mem_cache_;
     public:
         // 初始化一块内存
         void init(byte_t *buf, uint32_t size) {
@@ -180,7 +182,7 @@ namespace nokv {
             capacity_ = size - sizeof(Header);
             begin_ = buf + sizeof(Header);
             buf_ = buf;
-            cache_.clear();
+            mem_cache_.clear();
         }
 
         // 和一块内存绑定
@@ -189,8 +191,8 @@ namespace nokv {
             capacity_ = size - sizeof(Header);
             begin_ = buf + sizeof(Header);
             buf_ = buf;
-            cache_.clear();
-            invalid_cache(this->begin(), this->end());
+            mem_cache_.clear();
+            build_mem_cache(this->begin(), this->end());
         }
 
         byte_t *begin() { return begin_; }
@@ -254,7 +256,9 @@ namespace nokv {
                 byte_t *begin, byte_t *end,
                 const std::function<int(const kv_string_t &, byte_t *, size_t)> &fnc);
 
-        void invalid_cache(byte_t *begin, byte_t *end);
+        void build_mem_cache(byte_t *begin, byte_t *end);
+
+        void invalid_mem_cache(const byte_t *const begin, int offset);
     };
 }
 

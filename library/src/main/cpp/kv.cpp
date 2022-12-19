@@ -178,7 +178,6 @@ namespace nokv {
             return ERROR_OVERFLOW;
         }
 
-
         byte_t *begin = this->begin();
         byte_t *end = this->end();
 
@@ -188,12 +187,6 @@ namespace nokv {
         // 1. 先保证数据结构完整
         // 不更新crc，方便后面可以恢复
         auto prev_total_size = header_.size_;
-
-        header_.size_ =
-                write_ptr == nullptr ? prev_total_size : write_ptr - begin - key.byte_size();
-        header_.crc_ = 0;
-        memcpy(buf_, &header_, sizeof(header_));
-
         size_t new_size = 0;
 
         // 2. 开始计算写入位置
@@ -217,17 +210,9 @@ namespace nokv {
             }
 
             // 长度发生了变化就要重排
-            size_t offset_size = end - write_ptr - prev_size;
-            byte_t *adjust_ptr = write_ptr - key.byte_size();
-            memmove(adjust_ptr, write_ptr + prev_size, offset_size);
-            write_ptr = adjust_ptr + offset_size;
-#ifdef NKV_UNIT_TEST
-            LOGD("invalid cache: %d, new size %d, %p %p", (adjust_ptr - begin), (write_ptr - begin), adjust_ptr, write_ptr);
-#endif
-            invalid_cache(adjust_ptr, write_ptr);
-            new_size = prev_total_size + (len + 1 - prev_size);
-            header_.size_ = write_ptr - begin;
-            memcpy(buf_, &header_, sizeof(header_));
+            remove(key);
+            new_size = header_.size_ + key.byte_size() + len + 1;
+            write_ptr = this->end();
             goto do_write;
         }
 
@@ -239,13 +224,13 @@ namespace nokv {
         is(write_ptr + 1);
         header_.size_ = new_size;
         memcpy(buf_, &header_, sizeof(header_));
-        cache_[key.str_] = save;
+        mem_cache_[key.str_] = save;
         return 0;
     }
 
     int Map::get_value(const kv_string_t &key, byte_t **ret) {
-        const auto &it = cache_.find(key.str_);
-        if (it == cache_.end()) {
+        const auto &it = mem_cache_.find(key.str_);
+        if (it == mem_cache_.end()) {
             return ERROR_NOT_FOUND;
         }
 
@@ -472,11 +457,11 @@ namespace nokv {
 
         byte_t *ret = NULL;
         int code = get_value(key, &ret);
-        if (code == 0) {
+        if (code == ERROR_NOT_FOUND) {
             return 0;
         }
 
-        if (code != ERROR_NOT_FOUND) {
+        if (code != 0) {
             return code;
         }
 
@@ -491,7 +476,9 @@ namespace nokv {
         header_.size_ = prev_size - count;
         memcpy(buf_, &header_, sizeof(header_));
 
-        cache_.erase(key.str_);
+        mem_cache_.erase(key.str_);
+        int offset = count;
+        invalid_mem_cache(ret, -offset);
         return 0;
     }
 
@@ -534,7 +521,7 @@ namespace nokv {
         // todo test only clear all
         header_.crc_ = 0;
         header_.size_ = 0;
-        cache_.clear();
+        mem_cache_.clear();
         memcpy(buf_, &header_, sizeof(Header));
         return 0;
     }
@@ -544,10 +531,19 @@ namespace nokv {
         memcpy(buf_, &header_, sizeof(Header));
     }
 
-    void Map::invalid_cache(byte_t *begin, byte_t *end) {
+    void Map::build_mem_cache(byte_t *begin, byte_t *end) {
         read_all(begin, end, [=](const kv_string_t &key, byte_t *body, size_t) -> int {
-            cache_[key.str_] = body - key.byte_size();
+            mem_cache_[key.str_] = body - key.byte_size();
             return 0;
+        });
+    }
+
+    void Map::invalid_mem_cache(const byte_t *const begin, int offset) {
+        std::for_each(mem_cache_.begin(), mem_cache_.end(), [=](kv_cache_value_t &v) {
+            if (v.second >= begin) {
+                void* ptr = v.second;
+                v.second += offset;
+            }
         });
     }
 
