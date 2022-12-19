@@ -154,6 +154,7 @@ void adj_proc(char *argv[], int start, int end)
         for (int j = 0; j < 2; ++j)
         {
             ScopedLock<KV, false> lock(*kv);
+            kv->reload_if();
             if (j)
             {
                 kv->remove(key.c_str());
