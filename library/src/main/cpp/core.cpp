@@ -110,7 +110,7 @@ namespace nokv {
 
         KVMeta meta = {};
         meta.update(fd, st);
-        KV *kv = new KV(fd, name, file_lock.release(), meta);
+        KV *kv = new KV(fd, file_lock.release(), meta);
         if (new_file) {
             LOGD("init buf");
             kv->init_buf(mem, st.st_size);

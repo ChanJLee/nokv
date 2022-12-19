@@ -19,7 +19,7 @@ namespace nokv {
         byte_t *buf_;
         KVMeta meta_;
 
-        KV(int fd, const char *name, Lock *lock, const nokv::KVMeta &meta)
+        KV(int fd, Lock *lock, const nokv::KVMeta &meta)
                 : lock_(lock), fd_(fd),
                   map_(),
                   meta_(meta) {
