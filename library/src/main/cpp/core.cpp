@@ -12,7 +12,7 @@
 #include <sys/stat.h>
 #include "log.h"
 #include <zlib.h>
-#include <stddef.h>
+#include <cstddef>
 #include "meta.h"
 #include <sstream>
 #include <memory>

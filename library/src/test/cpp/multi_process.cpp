@@ -130,6 +130,46 @@ void read_proc(char *argv[], int start, int end)
     exit(0);
 }
 
+void adj_proc(char *argv[], int start, int end)
+{
+    if (signal(SIGSEGV, sighandler_dump_stack) == SIG_ERR)
+        perror("signal failed");
+
+    nokv::KV::init(argv[1]);
+    nokv::KV *kv = nokv::KV::create(argv[2]);
+
+    if (kv == nullptr)
+    {
+        std::cout << "fuck off, create kv failed, pid: " << getpid() << std::endl;
+        exit(SIGBUS);
+    }
+
+    std::cout << getpid() << " adj from: " << start << " to " << end << std::endl;
+
+    for (int i = start; i < end; ++i)
+    {
+        std::stringstream ss;
+        ss << "kv_int32_" << i;
+        const auto &key = ss.str();
+        for (int j = 0; j < 2; ++j)
+        {
+            ScopedLock<KV, false> lock(*kv);
+            if (j)
+            {
+                kv->remove(key.c_str());
+            }
+            else
+            {
+                kv->put_int32(key.c_str(), 1);
+            }
+            kv->flush();
+        }
+    }
+
+    nokv::KV::destroy(kv);
+    exit(0);
+}
+
 int main(int argc, char *argv[])
 {
     int total = 20000;
@@ -154,6 +194,16 @@ int main(int argc, char *argv[])
     if (pid == 0)
     {
         read_proc(argv, 0, total);
+    }
+    else
+    {
+        children.push_back(pid);
+    }
+
+    pid = fork();
+    if (pid == 0)
+    {
+        adj_proc(argv, total, total + step);
     }
     else
     {
@@ -204,16 +254,17 @@ int main(int argc, char *argv[])
     nokv::KV *kv = nokv::KV::create(argv[2]);
 
     std::set<std::string> set;
-    kv->read_all([&](const nokv::kv_string_t &key, nokv::Entry *entry) -> void { 
+    kv->read_all([&](const nokv::kv_string_t &key, nokv::Entry *entry) -> void
+                 { 
         std::string s(key.str_);
         const auto& res = set.insert(s);
         if (!res.second) {
             std::cerr << "check kv entry failed: " << s << std::endl;
             exit(1);
-        }
-    });
+        } });
 
-    if (set.size() != total) {
+    if (set.size() != total)
+    {
         std::cerr << "check kv count failed" << std::endl;
         exit(1);
     }
