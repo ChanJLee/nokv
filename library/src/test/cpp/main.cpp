@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
 
     kv->put_array("array", array);
     kv->put_string("suffix2", "====");
-//    kv->remove("suffix");
+    kv->remove("suffix");
     kv->flush();
 
     std::cout << "read all, size: " << kv->size() << std::endl;
