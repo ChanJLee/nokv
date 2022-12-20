@@ -4,7 +4,7 @@
 
 #include "meta.h"
 #include <string>
-#include "kv.h"
+#include "kv_map.h"
 
 namespace nokv {
     bool KVMeta::operator==(const KVMeta &rhs) const {

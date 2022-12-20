@@ -6,7 +6,7 @@
 #define NKV_CORE_H
 
 #include "lock.h"
-#include "kv.h"
+#include "kv_map.h"
 #include "meta.h"
 #include <string>
 #include <functional>
