@@ -173,7 +173,7 @@ namespace nokv {
 
         typedef std::unordered_map<kv_string_t, byte_t *, hash, predicate<kv_string_t>> kv_mem_cache_t;
         typedef kv_mem_cache_t::value_type kv_cache_value_t;
-        kv_mem_cache_t mem_cache_;
+        kv_mem_cache_t mem_cache_; // todo key must be in buffer!!!
     public:
         // 初始化一块内存
         void init(byte_t *buf, uint32_t size) {
@@ -259,7 +259,7 @@ namespace nokv {
 
         void build_mem_cache(byte_t *begin, byte_t *end);
 
-        void invalid_mem_cache(const byte_t *const begin, int offset);
+        void invalid_mem_cache(const byte_t *const dirty, int offset);
     };
 }
 

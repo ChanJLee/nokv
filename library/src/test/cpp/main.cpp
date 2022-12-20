@@ -2,8 +2,53 @@
 #include "../../main/cpp/core.h"
 #include <string>
 #include <inttypes.h>
+#include <execinfo.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <stddef.h>
+#include <set>
+
+void print_trace(void)
+{
+    void *array[30];
+    size_t size;
+    char **strings;
+    size_t i;
+
+    size = backtrace(array, 30);
+    strings = backtrace_symbols(array, size);
+    if (NULL == strings)
+    {
+        perror("backtrace_symbols");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Obtained %zd stack frames.\n", size);
+
+    for (i = 0; i < size; i++)
+    {
+        printf("%s\n", strings[i]);
+    }
+
+    free(strings);
+    strings = NULL;
+
+    exit(EXIT_SUCCESS);
+}
+
+void sighandler_dump_stack(int sig)
+{
+    psignal(sig, "handler"); // 打印信号相关信息
+    print_trace();
+    signal(sig, SIG_DFL); // 恢复信号默认处理
+    raise(sig);           // 继续后续的流程
+}
 
 int main(int argc, char *argv[]) {
+    if (signal(SIGSEGV, sighandler_dump_stack) == SIG_ERR)
+        perror("signal failed");
+
     std::cout << "init" << std::endl;
     nokv::KV::init(argv[1]);
     std::cout << "create kv" << std::endl;
@@ -26,7 +71,7 @@ int main(int argc, char *argv[]) {
 
     kv->put_array("array", array);
     kv->put_string("suffix2", "====");
-    kv->remove("suffix");
+//    kv->remove("suffix");
     kv->flush();
 
     std::cout << "read all, size: " << kv->size() << std::endl;
