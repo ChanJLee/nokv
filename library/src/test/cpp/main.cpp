@@ -56,9 +56,9 @@ int main(int argc, char *argv[]) {
     std::cout << "write" << std::endl;
     kv->put_boolean("boolean", true);
     kv->put_string("string", "hello world2");
-    kv->put_float("float", 3.1415926);
-    kv->put_int32("int32", 0x123456);
-    kv->put_int64("int64", 0xbabeaaaa);
+//    kv->put_float("float", 3.1415926);
+//    kv->put_int32("int32", 0x123456);
+//    kv->put_int64("int64", 0xbabeaaaa);
     kv->put_string("suffix", "====");
     kv->put_string("string", "hello world");
 
@@ -69,8 +69,8 @@ int main(int argc, char *argv[]) {
     array.put_null();
     array.put_string("a3");
 
-    kv->put_array("array", array);
-    kv->put_string("suffix2", "====");
+//    kv->put_array("array", array);
+//    kv->put_string("suffix2", "====");
     kv->remove("suffix");
     kv->flush();
 

@@ -7,6 +7,7 @@
 
 #include "kv_types.h"
 #include <unordered_map>
+#include <algorithm>
 
 namespace nokv {
     class MemCache {
@@ -30,7 +31,9 @@ namespace nokv {
         };
 
         typedef std::unordered_map<kv_string_t, byte_t *, hash, predicate<kv_string_t>> kv_cache_t;
+        typedef kv_cache_t::value_type kv_cache_value_t;
         kv_cache_t fast_cache_;
+
     public:
         void clear() { fast_cache_.clear(); }
 
@@ -62,14 +65,18 @@ namespace nokv {
 
         void move_cache(const byte_t *const begin, const byte_t *const end, const int64_t offset) {
             auto last = fast_cache_.end();
-            for (auto first = fast_cache_.begin(); first != last; ++first) {
-                bool val_dirty = first->second >= begin && first->second < end;
-                if (val_dirty) {
-                    first->second += offset;
-                    auto key = const_cast<kv_string_t &>(first->first);
-                    key.str_ = (char *) first->second - key.size_ - 1;
-                }
-            }
+            kv_cache_t tmp;
+            std::remove_if(fast_cache_.begin(), fast_cache_.end(),
+                           [&](kv_cache_value_t &entry) -> bool {
+                               bool val_dirty = entry.second >= begin && entry.second < end;
+                               if (val_dirty) {
+                                   kv_string_t key = entry.first;
+                                   key.str_ = key.str_ + offset;
+                                   tmp[key] = entry.second + offset;
+                               }
+                               return val_dirty;
+                           });
+            fast_cache_.merge(tmp);
         }
     };
 }

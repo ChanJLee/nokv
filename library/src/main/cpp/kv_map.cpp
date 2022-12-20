@@ -472,6 +472,7 @@ namespace nokv {
         header_.size_ = ret - key.byte_size() - begin();
         memcpy(buf_, &header_, sizeof(header_));
 
+        mem_cache_.remove(key);
         auto body_len = Entry::get_entry_size(ret);
         size_t count = key.byte_size() + body_len;
         byte_t *dest = ret - key.byte_size();
@@ -481,7 +482,6 @@ namespace nokv {
         header_.size_ = prev_size - count;
         memcpy(buf_, &header_, sizeof(header_));
 
-        mem_cache_.remove(key);
         int offset = count;
         invalid_mem_cache(ret, -offset);
         return 0;
