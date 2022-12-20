@@ -109,7 +109,7 @@ void read_proc(char *argv[], int start, int end)
     for (int i = start; i < end; ++i)
     {
         ScopedLock<KV, false> lock(*kv);
-        // kv->reload_if(); /* key */
+        kv->reload_if(); /* key */
         std::stringstream ss;
         ss << "kv_int32_" << i;
         const auto &key = ss.str();

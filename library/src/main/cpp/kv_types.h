@@ -10,6 +10,8 @@
 namespace nokv {
     typedef unsigned char byte_t;
     typedef byte_t kv_type_t;
+
+    /* 类型前缀 */
     const int TYPE_INT32 = 'I';
     const int TYPE_FLOAT = 'F';
     const int TYPE_INT64 = 'L';
@@ -19,14 +21,18 @@ namespace nokv {
     const int TYPE_NULL = 'N';
 
     /* 必须是负值 */
-    const int ERROR_OVERFLOW = -1;
-    const int ERROR_NOT_FOUND = -2;
-    const int ERROR_TYPE_ERROR = -3;
-    const int ERROR_INVALID_STATE = -4;
-    const int ERROR_MAP_FAILED = -5;
-    const int ERROR_INVALID_ARGUMENTS = -6;
-    const int VALUE_NULL = 1;
+    const int ERROR_OVERFLOW = -1; /* 写buffer满了 */
+    const int ERROR_NOT_FOUND = -2; /* 没有找到 */
+    const int ERROR_TYPE_ERROR = -3; /* 类型不兼容 */
+    const int ERROR_INVALID_STATE = -4; /* 错误状态 */
+    const int ERROR_MAP_FAILED = -5; /* mmap失败 */
+    const int ERROR_INVALID_ARGUMENTS = -6; /* 无效参数 */
+    const int ERROR_CACHE_INVALID = -7; /* 缓存失效 */
 
+    const int CODE_OK = 0; /* ok */
+    const int VALUE_NULL = 1; /* 空值 */
+
+    /* 基本类型 */
     typedef bool kv_boolean_t;
     typedef float kv_float_t;
     typedef int32_t kv_int32_t;

@@ -250,10 +250,9 @@ namespace nokv {
         }
 
 #if defined(NKV_UNIT_TEST) || defined(BAY_DEBUG)
-        LOGD("get_value invalid state");
-        exit(1);
+        LOGD("get_value cache invalid");
 #endif
-        return ERROR_INVALID_STATE;
+        return ERROR_CACHE_INVALID;
     }
 
     int Map::get_boolean(const kv_string_t &key, kv_boolean_t &rtn) {
