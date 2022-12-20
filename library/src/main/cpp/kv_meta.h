@@ -2,8 +2,8 @@
 // Created by chan on 2022/11/30.
 //
 
-#ifndef NKV_META_H
-#define NKV_META_H
+#ifndef NKV_KV_META_H
+#define NKV_KV_META_H
 
 #include <inttypes.h>
 #include <stddef.h>
@@ -29,4 +29,4 @@ namespace nokv {
     };
 }
 
-#endif //NKV_META_H
+#endif //NKV_KV_META_H
