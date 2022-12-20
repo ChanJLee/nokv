@@ -465,6 +465,7 @@ namespace nokv {
             return code;
         }
 
+        byte_t *end = this->end();
         auto prev_size = header_.size_;
         header_.crc_ = 0;
         header_.size_ = ret - key.byte_size() - begin();
@@ -472,7 +473,10 @@ namespace nokv {
 
         auto body_len = Entry::get_entry_size(ret);
         size_t count = key.byte_size() + body_len;
-        memmove(ret - key.byte_size(), ret + body_len, count);
+        byte_t *dest = ret - key.byte_size();
+        byte_t *src = ret + body_len;
+        memmove(dest, src, end - src);
+
         header_.size_ = prev_size - count;
         memcpy(buf_, &header_, sizeof(header_));
 
@@ -538,14 +542,19 @@ namespace nokv {
         });
     }
 
-    void Map::invalid_mem_cache(const byte_t *const begin, int offset) {
-        std::for_each(mem_cache_.begin(), mem_cache_.end(), [=](kv_cache_value_t &v) {
-            if (v.second >= begin) {
-                auto& key = const_cast<kv_string_t &>(v.first);
-                key.str_ += offset;
-                v.second += offset;
+    void Map::invalid_mem_cache(const byte_t *const dirty, int offset) {
+        const void *const begin = dirty;
+        const void *const end = this->begin() + this->capacity_;
+
+        auto last = mem_cache_.end();
+        for (auto first = mem_cache_.begin(); first != last; ++first) {
+            bool val_dirty = first->second >= begin && first->second < end;
+            if (val_dirty) {
+                first->second += offset;
+                kv_string_t &key = const_cast<kv_string_t &>(first->first);
+                key.str_ = (char *) first->second - key.size_ - 1;
             }
-        });
+        }
     }
 
     bool kv_array_t::iterator::next(Entry *entry) {
