@@ -10,6 +10,14 @@
     jclass type##_clazz = env->FindClass("java/lang/" AS_STR(type)); \
     jmethodID type##_valueof = env->GetStaticMethodID(type##_clazz, "valueOf", "(" AS_STR(sym_type) ")Ljava/lang/"  AS_STR(type) ";");
 
+// todo
+#define GET_VALUE_FROM_KV(type) \
+    int code = kv->get_##type(k, v); \
+    if (code == ERROR_CACHE_INVALID) { \
+       kv->reload_if(); \
+    } \
+    code = kv->get_##type(k, v); \
+
 extern "C"
 JNIEXPORT jlong JNICALL
 Java_me_chan_nkv_NoKV_nativeCreate(JNIEnv *env, jclass clazz, jstring ws) {
