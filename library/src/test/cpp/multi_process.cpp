@@ -266,7 +266,7 @@ int main(int argc, char *argv[])
 
     if (set.size() != total)
     {
-        std::cerr << "check kv count failed" << std::endl;
+        std::cerr << "check kv count failed" << set.size() << "->" << total << std::endl;
         exit(1);
     }
 

@@ -5,103 +5,12 @@
 #ifndef NKV_IO_H
 #define NKV_IO_H
 
-#include <inttypes.h>
 #include <functional>
 #include <cstring>
-#include <unordered_map>
+#include "kv_types.h"
+#include "kv_cache.h"
 
 namespace nokv {
-    typedef unsigned char byte_t;
-    typedef byte_t kv_type_t;
-    const int TYPE_INT32 = 'I';
-    const int TYPE_FLOAT = 'F';
-    const int TYPE_INT64 = 'L';
-    const int TYPE_BOOLEAN = 'B';
-    const int TYPE_STRING = 'S';
-    const int TYPE_ARRAY = 'A';
-    const int TYPE_NULL = 'N';
-
-    /* 必须是负值 */
-    const int ERROR_OVERFLOW = -1;
-    const int ERROR_NOT_FOUND = -2;
-    const int ERROR_TYPE_ERROR = -3;
-    const int ERROR_INVALID_STATE = -4;
-    const int ERROR_MAP_FAILED = -5;
-    const int ERROR_INVALID_ARGUMENTS = -6;
-    const int VALUE_NULL = 1;
-
-    typedef bool kv_boolean_t;
-    typedef float kv_float_t;
-    typedef int32_t kv_int32_t;
-    typedef int64_t kv_int64_t;
-
-    struct kv_string_t {
-        typedef uint32_t kv_string_size_t;
-
-        kv_string_size_t size_;
-        const char *str_;
-
-        int to_stream(byte_t *stream) const;
-
-        static int from_stream(byte_t *stream, kv_string_t &str);
-
-        static int from_c_str(const char *s, kv_string_t &str);
-
-        /* with bound check */
-        static int from_stream_safe(byte_t *stream, kv_string_t &str, byte_t *end);
-
-        size_t byte_size() const { return size_ + sizeof(size_) + 1; }
-
-        static size_t get_entry_size(byte_t *);
-    };
-
-    struct Entry;
-
-    struct kv_array_t {
-        typedef uint32_t kv_array_size_t;
-
-        kv_array_size_t capacity_;
-        byte_t *end_;
-        /* 1u + 4u + elements */
-        byte_t *begin_;
-
-        static int from_stream(byte_t *stream, kv_array_t &array);
-
-        int to_stream(byte_t *stream) const;
-
-        static int create(kv_array_t &array);
-
-        static int free(kv_array_t &array);
-
-        int put_string(const char *);
-
-        int put_null();
-
-        size_t byte_count() const {
-            return end_ - begin_ + 4;
-        }
-
-        class iterator {
-            byte_t *begin_;
-            byte_t *end_;
-
-            iterator(byte_t *begin, byte_t *end) : begin_(begin), end_(end) {};
-        public:
-            bool next(Entry *entry);
-
-            friend class kv_array_t;
-        };
-
-        iterator it() const { return iterator(begin_, end_); }
-
-        static size_t get_entry_size(byte_t *);
-
-    private:
-        int put_string(const kv_string_t &);
-
-        void resize();
-    };
-
     class Entry {
         kv_type_t type_;
         union {
@@ -139,41 +48,20 @@ namespace nokv {
         static size_t get_entry_size(byte_t *entry);
     };
 
-    struct Header {
-        char magic_[4] = {'n', 'o', 'k', 'v'};
-        uint16_t order_ = 0x1234;
-        uint16_t version_ = 0x0100;
-        uint32_t crc_ = 0;
-        uint32_t size_ = 0;
-    } __attribute__ ((aligned (4)));
-
     class Map {
+        struct Header {
+            char magic_[4] = {'n', 'o', 'k', 'v'};
+            uint16_t order_ = 0x1234;
+            uint16_t version_ = 0x0100;
+            uint32_t crc_ = 0;
+            uint32_t size_ = 0;
+        } __attribute__ ((aligned (4)));
+
         Header header_;
         uint32_t capacity_;
         byte_t *begin_;
         byte_t *buf_;
-
-        template<class _Tp>
-        struct predicate : public std::binary_function<_Tp, _Tp, bool> {
-            bool operator()(const _Tp &__x, const _Tp &__y) const {
-                return __x.size_ == __y.size_ && (__x.str_ == __y.str_ || strncmp(__x.str_, __y.str_, __x.size_) == 0);
-            }
-        };
-
-        struct hash {
-            size_t operator()(const kv_string_t& key) const {
-                int seed = 31;
-                size_t hash = 0;
-                for (kv_string_t::kv_string_size_t i = 0; i < key.size_; ++i) {
-                    hash = (hash * seed) + key.str_[i];
-                }
-                return hash;
-            }
-        };
-
-        typedef std::unordered_map<kv_string_t, byte_t *, hash, predicate<kv_string_t>> kv_mem_cache_t;
-        typedef kv_mem_cache_t::value_type kv_cache_value_t;
-        kv_mem_cache_t mem_cache_; // todo key must be in buffer!!!
+        MemCache mem_cache_;
     public:
         // 初始化一块内存
         void init(byte_t *buf, uint32_t size) {
@@ -244,7 +132,7 @@ namespace nokv {
         void sync();
 
     private:
-        int get_value(const kv_string_t &, byte_t **ret);
+        int get_value(const kv_string_t &, byte_t *&ret);
 
         int
         put_value(const kv_string_t &, kv_type_t, const std::function<void(byte_t *)> &,

@@ -4,6 +4,8 @@
 
 #include "kv.h"
 #include "log.h"
+#include "kv_cache.h"
+
 #include <cstring>
 #include <zlib.h>
 
@@ -182,7 +184,7 @@ namespace nokv {
         byte_t *end = this->end();
 
         byte_t *write_ptr = nullptr;
-        get_value(key, &write_ptr);
+        get_value(key, write_ptr);
 
         // 1. 先保证数据结构完整
         // 不更新crc，方便后面可以恢复
@@ -224,27 +226,25 @@ namespace nokv {
         is(write_ptr + 1);
         header_.size_ = new_size;
         memcpy(buf_, &header_, sizeof(header_));
-        kv_string_t cache_key = {};
-        kv_string_t::from_stream(save, cache_key);
-        mem_cache_[cache_key] = save;
+        mem_cache_.put(save);
         return 0;
     }
 
-    int Map::get_value(const kv_string_t &key, byte_t **ret) {
-        const auto &it = mem_cache_.find(key);
-        if (it == mem_cache_.end()) {
-            return ERROR_NOT_FOUND;
+    int Map::get_value(const kv_string_t &key, byte_t *&ret) {
+        byte_t *cache = NULL;
+        int code = mem_cache_.get(key, cache);
+        if (code) {
+            return code;
         }
 
         // cache hit
-        byte_t *cache = it->second;
         byte_t *end = this->end();
         if (cache >= begin() && cache < end) {
             kv_string_t temp = {};
             if (kv_string_t::from_stream_safe(cache, temp, end) == 0 &&
                 key.size_ == temp.size_ &&
                 strncmp(key.str_, temp.str_, key.size_) == 0) {
-                *ret = cache + key.byte_size();
+                ret = cache + key.byte_size();
                 return 0;
             }
         }
@@ -258,7 +258,7 @@ namespace nokv {
 
     int Map::get_boolean(const kv_string_t &key, kv_boolean_t &rtn) {
         byte_t *ptr = nullptr;
-        int code = get_value(key, &ptr);
+        int code = get_value(key, ptr);
         if (code < 0) {
             return code;
         }
@@ -283,7 +283,7 @@ namespace nokv {
 
     int Map::get_int32(const kv_string_t &key, kv_int32_t &rtn) {
         byte_t *ptr = nullptr;
-        int code = get_value(key, &ptr);
+        int code = get_value(key, ptr);
         if (code < 0) {
             return code;
         }
@@ -315,7 +315,7 @@ namespace nokv {
 
     int Map::get_int64(const kv_string_t &key, kv_int64_t &rtn) {
         byte_t *ptr = nullptr;
-        int code = get_value(key, &ptr);
+        int code = get_value(key, ptr);
         if (code < 0) {
             return code;
         }
@@ -348,7 +348,7 @@ namespace nokv {
 
     int Map::get_float(const kv_string_t &key, kv_float_t &rtn) {
         byte_t *ptr = nullptr;
-        int code = get_value(key, &ptr);
+        int code = get_value(key, ptr);
         if (code < 0) {
             return code;
         }
@@ -381,7 +381,7 @@ namespace nokv {
 
     int Map::get_string(const kv_string_t &key, kv_string_t &rtn) {
         byte_t *ptr = nullptr;
-        int code = get_value(key, &ptr);
+        int code = get_value(key, ptr);
         if (code < 0) {
             return code;
         }
@@ -406,7 +406,7 @@ namespace nokv {
 
     int Map::get_array(const kv_string_t &key, kv_array_t &rtn) {
         byte_t *ptr = nullptr;
-        int code = get_value(key, &ptr);
+        int code = get_value(key, ptr);
         if (code < 0) {
             return code;
         }
@@ -431,7 +431,7 @@ namespace nokv {
 
     bool Map::contains(const kv_string_t &key) {
         byte_t *ptr = nullptr;
-        if (get_value(key, &ptr)) {
+        if (get_value(key, ptr)) {
             return false;
         }
         return ptr != nullptr;
@@ -458,7 +458,7 @@ namespace nokv {
         }
 
         byte_t *ret = NULL;
-        int code = get_value(key, &ret);
+        int code = get_value(key, ret);
         if (code == ERROR_NOT_FOUND) {
             return 0;
         }
@@ -482,7 +482,7 @@ namespace nokv {
         header_.size_ = prev_size - count;
         memcpy(buf_, &header_, sizeof(header_));
 
-        mem_cache_.erase(key);
+        mem_cache_.remove(key);
         int offset = count;
         invalid_mem_cache(ret, -offset);
         return 0;
@@ -539,24 +539,15 @@ namespace nokv {
 
     void Map::build_mem_cache(byte_t *begin, byte_t *end) {
         read_all(begin, end, [=](const kv_string_t &key, byte_t *body, size_t) -> int {
-            mem_cache_[key] = body - key.byte_size();
+            mem_cache_.put(key, body - key.byte_size());
             return 0;
         });
     }
 
     void Map::invalid_mem_cache(const byte_t *const dirty, int offset) {
-        const void *const begin = dirty;
-        const void *const end = this->begin() + this->capacity_;
-
-        auto last = mem_cache_.end();
-        for (auto first = mem_cache_.begin(); first != last; ++first) {
-            bool val_dirty = first->second >= begin && first->second < end;
-            if (val_dirty) {
-                first->second += offset;
-                kv_string_t &key = const_cast<kv_string_t &>(first->first);
-                key.str_ = (char *) first->second - key.size_ - 1;
-            }
-        }
+        const byte_t *const begin = dirty;
+        const byte_t *const end = buf_ + capacity_;
+        mem_cache_.move_cache(begin, end, offset);
     }
 
     bool kv_array_t::iterator::next(Entry *entry) {
