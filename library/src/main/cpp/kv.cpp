@@ -224,7 +224,9 @@ namespace nokv {
         is(write_ptr + 1);
         header_.size_ = new_size;
         memcpy(buf_, &header_, sizeof(header_));
-        mem_cache_[key] = save;
+        kv_string_t cache_key = {};
+        kv_string_t::from_stream(save, cache_key);
+        mem_cache_[cache_key] = save;
         return 0;
     }
 
