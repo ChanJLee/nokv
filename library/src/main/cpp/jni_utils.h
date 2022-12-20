@@ -2,8 +2,8 @@
 // Created by chan on 2022/11/23.
 //
 
-#ifndef NKV_SCOPED_STR_H
-#define NKV_SCOPED_STR_H
+#ifndef NKV_JNI_UTILS_H
+#define NKV_JNI_UTILS_H
 
 #include <jni.h>
 
@@ -73,4 +73,4 @@ public:
     ScopeJString DEF_NAME(___scope_str_, cstr)(env, cstr); \
     jstring jstr = DEF_NAME(___scope_str_, cstr).getJString()
 
-#endif //NKV_SCOPED_STR_H
+#endif //NKV_JNI_UTILS_H

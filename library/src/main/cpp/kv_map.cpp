@@ -3,7 +3,7 @@
 //
 
 #include "kv_map.h"
-#include "log.h"
+#include "kv_log.h"
 #include "kv_cache.h"
 
 #include <cstring>

@@ -1,9 +1,9 @@
 //
 // Created by chan on 2022/11/20.
 //
-#include "lock.h"
+#include "kv_lock.h"
 #include <sys/file.h>
-#include "log.h"
+#include "kv_log.h"
 
 namespace nokv {
     void Lock::lock(bool share) {

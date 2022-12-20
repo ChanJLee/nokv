@@ -2,15 +2,15 @@
 // Created by chan on 2022/11/20.
 //
 
-#include "lock.h"
-#include "core.h"
+#include "kv_lock.h"
+#include "nokv.h"
 #include <cstring>
 #include <unistd.h>
 #include <fstream>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include "log.h"
+#include "kv_log.h"
 #include <zlib.h>
 #include <cstddef>
 #include "kv_meta.h"

@@ -22,9 +22,9 @@ add_library( # Sets the name of the library.
              SHARED
 
              # Provides a relative path to your source file(s).
-        lock.cpp
+        kv_lock.cpp
         kv_map.cpp
-        core.cpp
+        nokv.cpp
         kv_meta.cpp
         jni.cpp)
 

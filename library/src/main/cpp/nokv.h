@@ -2,10 +2,10 @@
 // Created by chan on 2022/11/20.
 //
 
-#ifndef NKV_CORE_H
-#define NKV_CORE_H
+#ifndef NKV_NOKV_H
+#define NKV_NOKV_H
 
-#include "lock.h"
+#include "kv_lock.h"
 #include "kv_map.h"
 #include "kv_meta.h"
 #include <string>
@@ -97,4 +97,4 @@ namespace nokv {
     };
 }
 
-#endif //NKV_CORE_H
+#endif //NKV_NOKV_H

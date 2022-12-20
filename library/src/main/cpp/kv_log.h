@@ -2,8 +2,8 @@
 // Created by chan on 2022/5/19.
 //
 
-#ifndef NKV_LOG_H
-#define NKV_LOG_H
+#ifndef NKV_KV_LOG_H
+#define NKV_KV_LOG_H
 
 #if !defined(NKV_UNIT_TEST) && !defined(NKV_CLI)
 
@@ -25,4 +25,4 @@
 #define LOGD(...)  do {printf(__VA_ARGS__);printf("\n");} while(0);
 #endif
 
-#endif //NKV_LOG_H
+#endif //NKV_KV_LOG_H

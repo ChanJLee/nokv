@@ -1,8 +1,8 @@
 #include <jni.h>
-#include "core.h"
-#include "scoped_str.h"
-#include "lock.h"
-#include "log.h"
+#include "nokv.h"
+#include "jni_utils.h"
+#include "kv_lock.h"
+#include "kv_log.h"
 
 #define AS_STR(type) #type
 

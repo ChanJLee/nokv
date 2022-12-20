@@ -2,8 +2,8 @@
 // Created by chan on 2022/11/20.
 //
 
-#ifndef NKV_LOCK_H
-#define NKV_LOCK_H
+#ifndef NKV_KV_LOCK_H
+#define NKV_KV_LOCK_H
 
 #include <shared_mutex>
 
@@ -80,4 +80,4 @@ namespace nokv {
     };
 }
 
-#endif //NKV_LOCK_H
+#endif //NKV_KV_LOCK_H
