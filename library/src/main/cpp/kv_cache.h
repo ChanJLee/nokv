@@ -66,17 +66,18 @@ namespace nokv {
         void move_cache(const byte_t *const begin, const byte_t *const end, const int64_t offset) {
             auto last = fast_cache_.end();
             kv_cache_t tmp;
-            std::remove_if(fast_cache_.begin(), fast_cache_.end(),
-                           [&](kv_cache_value_t &entry) -> bool {
-                               bool val_dirty = entry.second >= begin && entry.second < end;
-                               if (val_dirty) {
-                                   kv_string_t key = entry.first;
-                                   key.str_ = key.str_ + offset;
-                                   tmp[key] = entry.second + offset;
-                               }
-                               return val_dirty;
-                           });
-            fast_cache_.merge(tmp);
+            for (auto it =  fast_cache_.begin(); it != fast_cache_.end(); ++it) {
+                bool val_dirty = it->second >= begin && it->second < end;
+                if (val_dirty) {
+                    auto node = fast_cache_.extract(it);
+                    kv_string_t& key = node.key();
+                    key.str_ = key.str_ + offset;
+                    byte_t* &byte = node.mapped();
+                    byte += offset;
+                    tmp.insert(std::move(node));
+                }
+            }
+            fast_cache_.merge(std::move(tmp));
         }
     };
 }
