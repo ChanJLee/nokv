@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
     pid_t pid = fork();
     if (pid == 0)
     {
-//        read_proc(argv, 0, total);
+        read_proc(argv, 0, total);
 exit(0);
     }
     else
@@ -252,8 +252,13 @@ exit(0);
         }
     }
 
+    std::cout << "start load kv" << std::endl;
     nokv::KV::init(argv[1]);
     nokv::KV *kv = nokv::KV::create(argv[2]);
+    if (kv == nullptr) {
+        std::cout << "load kv failed" << std::endl;
+        exit(1);
+    }
 
     std::set<std::string> set;
     kv->read_all([&](const nokv::kv_string_t &key, nokv::Entry *entry) -> void

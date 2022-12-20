@@ -53,6 +53,7 @@ namespace nokv {
             }
 
             entry = it->second;
+            return 0;
         }
 
         void remove(const kv_string_t &key) {
