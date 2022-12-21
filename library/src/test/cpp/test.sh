@@ -1,6 +1,5 @@
 make || exit $?
 
-git pull
 mkdir out
 ./main `pwd`/out demo
 
