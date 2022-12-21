@@ -227,6 +227,9 @@ namespace nokv {
         header_.size_ = new_size;
         memcpy(buf_, &header_, sizeof(header_));
         mem_cache_.put(save);
+#ifdef NKV_UNIT_TEST
+        LOGD("%d write end with %d", getpid(), header_.size_);
+#endif
         return 0;
     }
 
@@ -488,7 +491,7 @@ namespace nokv {
             byte_t *data = begin + key.byte_size();
             if (data > end) {
 #ifdef NKV_UNIT_TEST
-                LOGD("read all internal invalid state, get body error , begin %p, end %p, key: %s, pid: %d",  begin, end, key.str_, getpid());
+                LOGD("read_all_from_disk, key invalid state, key: %s, size: %d, at: %d", key.str_, key.size_, begin - begin_);
                 exit(1);
 #endif
                 return ERROR_INVALID_STATE;
@@ -498,7 +501,7 @@ namespace nokv {
             if (data + entry_size > end) {
                 /* invalid state */
 #ifdef NKV_UNIT_TEST
-                LOGD("read all internal invalid state, begin %p, end %p, key: %s, pid: %d",  begin, end, key.str_, getpid());
+                LOGD("read_all_from_disk, body invalid state, key: %s, size: %d, at: %d", key.str_, key.size_, begin - begin_);
                 exit(1);
 #endif
                 return ERROR_INVALID_STATE;
