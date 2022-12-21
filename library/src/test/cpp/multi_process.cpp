@@ -148,21 +148,22 @@ void adj_proc(char *argv[], int start, int end)
 
     for (int i = start; i < end; ++i)
     {
-        std::stringstream ss;
-        ss << "kv_int32_" << i;
-        const auto &key = ss.str();
-        for (int j = 0; j < 2; ++j)
         {
+            std::stringstream ss;
+            ss << "kv_int32_" << i;
+            const auto &key = ss.str();
             ScopedLock<KV, false> lock(*kv);
             kv->reload_if();
-            if (j)
-            {
-                kv->remove(key.c_str());
-            }
-            else
-            {
-                kv->put_int32(key.c_str(), 1);
-            }
+            kv->put_int32(key.c_str(), 1);
+            kv->flush();
+        }
+        {
+            std::stringstream ss;
+            ss << "kv_int32_" << i;
+            const auto &key = ss.str();
+            ScopedLock<KV, false> lock(*kv);
+            kv->reload_if();
+            kv->remove(key.c_str());
             kv->flush();
         }
     }
