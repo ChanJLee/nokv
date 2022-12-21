@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include <functional>
+#include <cstring>
 
 namespace nokv {
     class MemCache {
