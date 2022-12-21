@@ -65,9 +65,7 @@ namespace nokv {
         }
 
         void move_cache(const byte_t *const begin, const byte_t *const end, const int64_t offset) {
-            auto last = fast_cache_.end();
             kv_cache_t tmp;
-            // todo fix me
             for (auto it =  fast_cache_.begin(); it != fast_cache_.end(); ++it) {
                 bool val_dirty = it->second >= begin && it->second < end;
                 if (val_dirty) {
