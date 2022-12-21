@@ -111,9 +111,9 @@ void read_proc(char *argv[], int start, int end)
         if (kv->get_string(key, v) == 0)
         {
             ++count;
-            if (strncmp(v, demo_str, 11));
+            if (strncmp(v, demo_str, 11))
             {
-                std::cerr << "check value failed" << std::endl;
+                std::cerr << "check value failed -> [" << v << "][" << demo_str << "]"  << std::endl;
                 exit(1);
             }
         }
