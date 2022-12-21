@@ -64,23 +64,10 @@ namespace nokv {
         MemCache mem_cache_;
     public:
         // 初始化一块内存
-        void init(byte_t *buf, uint32_t size) {
-            ::memcpy(buf, &header_, sizeof(Header));
-            capacity_ = size - sizeof(Header);
-            begin_ = buf + sizeof(Header);
-            buf_ = buf;
-            mem_cache_.clear();
-        }
+        void init(byte_t *buf, uint32_t size);
 
         // 和一块内存绑定
-        void bind(byte_t *buf, uint32_t size) {
-            ::memcpy(&header_, buf, sizeof(Header));
-            capacity_ = size - sizeof(Header);
-            begin_ = buf + sizeof(Header);
-            buf_ = buf;
-            mem_cache_.clear();
-            build_mem_cache(this->begin(), this->end());
-        }
+        void bind(byte_t *buf, uint32_t size);
 
         byte_t *begin() { return begin_; }
 
@@ -138,10 +125,7 @@ namespace nokv {
         put_value(const kv_string_t &, kv_type_t, const std::function<void(byte_t *)> &,
                   size_t len);
 
-        int read_all(
-                const std::function<int(const kv_string_t &, byte_t *, size_t)> &fnc);
-
-        int read_all(
+        int read_all_from_disk(
                 byte_t *begin, byte_t *end,
                 const std::function<int(const kv_string_t &, byte_t *, size_t)> &fnc);
 

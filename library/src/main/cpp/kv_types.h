@@ -6,6 +6,7 @@
 #define NKV_KV_TYPES_H
 
 #include <inttypes.h>
+#include <stddef.h>
 
 namespace nokv {
     typedef unsigned char byte_t;

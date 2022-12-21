@@ -438,17 +438,7 @@ namespace nokv {
 
     int Map::read_all(
             const std::function<void(const kv_string_t &, Entry *)> &fnc) {
-        Entry entry;
-        return read_all(
-                [&](const kv_string_t &key, byte_t *body, size_t body_len) -> int {
-                    if (Entry::from_stream(body, &entry)) {
-                        /* invalid state */
-                        return ERROR_INVALID_STATE;
-                    }
-
-                    fnc(key, &entry);
-                    return 0;
-                });
+        return mem_cache_.read_all(fnc);
     }
 
     int Map::remove(const kv_string_t &key) {
@@ -487,12 +477,7 @@ namespace nokv {
         return 0;
     }
 
-    int Map::read_all(
-            const std::function<int(const kv_string_t &, byte_t *, size_t)> &fnc) {
-        return read_all(this->begin(), this->end(), fnc);
-    }
-
-    int Map::read_all(
+    int Map::read_all_from_disk(
             byte_t *begin, byte_t *end,
             const std::function<int(const kv_string_t &, byte_t *, size_t)> &fnc) {
         kv_string_t key = {};
@@ -537,7 +522,7 @@ namespace nokv {
     }
 
     void Map::build_mem_cache(byte_t *begin, byte_t *end) {
-        read_all(begin, end, [=](const kv_string_t &key, byte_t *body, size_t) -> int {
+        read_all_from_disk(begin, end, [=](const kv_string_t &key, byte_t *body, size_t) -> int {
             mem_cache_.put(key, body - key.byte_size());
             return 0;
         });
@@ -547,6 +532,23 @@ namespace nokv {
         const byte_t *const begin = dirty;
         const byte_t *const end = buf_ + capacity_;
         mem_cache_.move_cache(begin, end, offset);
+    }
+
+    void Map::init(byte_t *buf, uint32_t size) {
+        ::memcpy(buf, &header_, sizeof(Header));
+        capacity_ = size - sizeof(Header);
+        begin_ = buf + sizeof(Header);
+        buf_ = buf;
+        mem_cache_.clear();
+    }
+
+    void Map::bind(byte_t *buf, uint32_t size) {
+        ::memcpy(&header_, buf, sizeof(Header));
+        capacity_ = size - sizeof(Header);
+        begin_ = buf + sizeof(Header);
+        buf_ = buf;
+        mem_cache_.clear();
+        build_mem_cache(this->begin(), this->end());
     }
 
     bool kv_array_t::iterator::next(Entry *entry) {
