@@ -174,7 +174,7 @@ void adj_proc(char *argv[], int start, int end)
 
 int main(int argc, char *argv[])
 {
-    int total = 20000;
+    int total = 1000;
     int sub_size = 2;
     int step = total / sub_size;
 
