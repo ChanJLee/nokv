@@ -9,6 +9,7 @@
 #include "kv_log.h"
 #include <unordered_map>
 #include <algorithm>
+#include <functional>
 
 namespace nokv {
     class MemCache {
