@@ -191,26 +191,26 @@ int main(int argc, char *argv[])
         }
     }
 
-//    pid_t pid = fork();
-//    if (pid == 0)
-//    {
-//        read_proc(argv, 0, total);
-//exit(0);
-//    }
-//    else
-//    {
-//        children.push_back(pid);
-//    }
-//
-//    pid = fork();
-//    if (pid == 0)
-//    {
-//        adj_proc(argv, total, total + step);
-//    }
-//    else
-//    {
-//        children.push_back(pid);
-//    }
+    pid_t pid = fork();
+    if (pid == 0)
+    {
+        read_proc(argv, 0, total);
+exit(0);
+    }
+    else
+    {
+        children.push_back(pid);
+    }
+
+    pid = fork();
+    if (pid == 0)
+    {
+        adj_proc(argv, total, total + step);
+    }
+    else
+    {
+        children.push_back(pid);
+    }
 
     int status;
     int w;

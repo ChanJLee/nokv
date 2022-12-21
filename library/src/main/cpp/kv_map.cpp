@@ -471,6 +471,7 @@ namespace nokv {
 
         header_.size_ = prev_size - count;
         memcpy(buf_, &header_, sizeof(header_));
+        memset(this->end(), 0, count);
 
         int offset = count;
         invalid_mem_cache(ret, -offset);
