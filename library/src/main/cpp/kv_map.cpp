@@ -227,9 +227,6 @@ namespace nokv {
         header_.size_ = new_size;
         memcpy(buf_, &header_, sizeof(header_));
         mem_cache_.put(save);
-#ifdef NKV_UNIT_TEST
-        LOGD("write %s end with %d, %d", key.str_, header_.size_, prev_total_size);
-#endif
         return 0;
     }
 
