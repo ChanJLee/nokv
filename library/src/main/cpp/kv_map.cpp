@@ -486,6 +486,14 @@ namespace nokv {
         while (begin < end) {
             kv_string_t::from_stream(begin, key);
             byte_t *data = begin + key.byte_size();
+            if (data > end) {
+#ifdef NKV_UNIT_TEST
+                LOGD("read all internal invalid state, get body error , begin %p, end %p, key: %s, pid: %d",  begin, end, key.str_, getpid());
+                exit(1);
+#endif
+                return ERROR_INVALID_STATE;
+            }
+
             size_t entry_size = Entry::get_entry_size(data);
             if (data + entry_size > end) {
                 /* invalid state */

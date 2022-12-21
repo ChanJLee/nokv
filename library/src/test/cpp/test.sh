@@ -3,6 +3,11 @@ make || exit $?
 mkdir out
 ./main `pwd`/out demo
 
+addr2line_cmd=""
+if [[ `uname` == "Linux" ]]; then
+  addr2line_cmd="| grep multi_proces | cut -d  ')' -f1 | cut -d '+' -f2 | xargs -I {} addr2line -e multi_process -a {}"
+fi
+
 echo "test muti process"
 rm `pwd`/out/mp.nokv
 ps | grep multi_process | awk '{print $1}' | xargs -I {} kill -9 {}
