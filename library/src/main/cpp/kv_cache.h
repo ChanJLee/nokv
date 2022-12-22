@@ -6,7 +6,6 @@
 #define NKV_KV_CACHE_H
 
 #include "kv_types.h"
-#include "kv_log.h"
 #include <unordered_map>
 #include <algorithm>
 #include <functional>
