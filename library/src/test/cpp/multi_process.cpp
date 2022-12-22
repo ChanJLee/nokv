@@ -164,14 +164,14 @@ void adj_proc(char *argv[], int start, int end)
 
 int main(int argc, char *argv[])
 {
-    int total = 1000;
+    int total = 10000;
     if (total >= 100000)
     {
         std::cerr << "total too large" << std::endl;
         return -1;
     }
 
-    int sub_size = 1;
+    int sub_size = 10;
     int step = total / sub_size;
 
     std::vector<pid_t> children;

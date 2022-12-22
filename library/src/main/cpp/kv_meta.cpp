@@ -9,8 +9,7 @@
 namespace nokv {
     bool KVMeta::operator==(const KVMeta &rhs) const {
         return fd_ == rhs.fd_ &&
-               seq_.tv_sec == rhs.seq_.tv_sec &&
-               seq_.tv_nsec == rhs.seq_.tv_nsec &&
+               memcmp(&seq_, &rhs.seq_, sizeof(seq_)) == 0 &&
                size_ == rhs.size_;
     }
 
@@ -18,7 +17,14 @@ namespace nokv {
         return !(rhs == *this);
     }
 
+    void next_seq(int fd) {
+        struct timespec ts = {};
+        clock_gettime(CLOCK_REALTIME, &ts);
+        futimens(fd, &ts);
+    }
+
     KVMeta KVMeta::seq(int fd) {
+        next_seq(fd);
         KVMeta meta = {
                 .fd_ = fd
         };
