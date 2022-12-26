@@ -4,6 +4,7 @@
 
 #include "kv_meta.h"
 #include <string>
+#include <unistd.h>
 #include "kv_map.h"
 #include "kv_log.h"
 
@@ -19,14 +20,16 @@ namespace nokv {
     }
 
     KVMeta KVMeta::next_seq(int fd) {
-#ifdef linux
         struct timespec ts = {};
         clock_gettime(CLOCK_REALTIME, &ts);
-        if (seq_.tv_sec == ts.tv_sec) {
-            ts.tv_sec++;
-        }
-        futimens(fd, &ts);
+        struct timespec times[2] = {0};
+        times[0] = ts;
+        times[1] = ts;
+        if (futimens(fd, times)) {
+#ifdef NKV_UNIT_TEST
+            exit(1);
 #endif
+        }
         return get_seq(fd);
     }
 
