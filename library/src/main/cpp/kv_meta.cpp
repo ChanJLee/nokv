@@ -17,14 +17,14 @@ namespace nokv {
         return !(rhs == *this);
     }
 
-    void next_seq(int fd) {
+    KVMeta KVMeta::next_seq(int fd) {
         struct timespec ts = {};
         clock_gettime(CLOCK_REALTIME, &ts);
         futimens(fd, &ts);
+        return get_seq(fd);
     }
 
-    KVMeta KVMeta::seq(int fd) {
-        next_seq(fd);
+    KVMeta KVMeta::get_seq(int fd) {
         KVMeta meta = {
                 .fd_ = fd
         };

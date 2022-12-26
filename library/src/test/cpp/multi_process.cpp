@@ -160,14 +160,14 @@ void adj_proc(char *argv[], int start, int end)
 
 int main(int argc, char *argv[])
 {
-    int total = 10000;
+    int total = 1000;
     if (total >= 100000)
     {
         std::cerr << "total too large" << std::endl;
         return -1;
     }
 
-    int sub_size = 10;
+    int sub_size = 4;
     int step = total / sub_size;
 
     std::vector<pid_t> children;
@@ -253,19 +253,14 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    std::set<std::string> set;
-    kv->read_all([&](const nokv::kv_string_t &key, nokv::Entry *entry) -> void
-                 { 
-        std::string s(key.str_);
-        const auto& res = set.insert(s);
-        if (!res.second) {
-            std::cerr << "check kv entry failed: " << s << std::endl;
-            exit(1);
-        } });
+    std::vector<std::string> vec;
+    kv->read_all([&](const nokv::kv_string_t &key, nokv::Entry *entry) -> void {
+        vec.push_back(key.str_);
+    });
 
-    if (set.size() != total)
+    if (vec.size() != total)
     {
-        std::cerr << "check kv count failed" << set.size() << "->" << total << std::endl;
+        std::cerr << "check kv count failed" << vec.size() << "->" << total << std::endl;
         exit(1);
     }
 

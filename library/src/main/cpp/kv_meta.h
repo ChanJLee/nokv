@@ -19,7 +19,9 @@ namespace nokv {
         meta_t seq_;
         size_t size_;
 
-        static KVMeta seq(int fd);
+        static KVMeta get_seq(int fd);
+
+        static KVMeta next_seq(int fd);
 
         void update(int fd, const struct stat &st);
 

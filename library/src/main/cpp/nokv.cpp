@@ -24,7 +24,7 @@ namespace nokv {
     void KV::flush() {
         map_.sync();
         ::msync(buf_, map_.capacity(), MS_SYNC);
-        meta_ = KVMeta::seq(fd_);
+        meta_ = KVMeta::next_seq(fd_);
     }
 
     void KV::close() {
@@ -285,7 +285,7 @@ namespace nokv {
     }
 
     bool KV::reload_if() {
-        KVMeta meta = KVMeta::seq(fd_);
+        KVMeta meta = KVMeta::get_seq(fd_);
         if (meta == meta_) {
             return true;
         }
@@ -302,7 +302,7 @@ namespace nokv {
         }
 
 #ifdef NKV_UNIT_TEST
-        LOGD("process %d reload, size %d", getpid(), st.st_size);
+            LOGD("process %d reload, size %d", getpid(), st.st_size);
 #else
         LOGD("reload");
 #endif
