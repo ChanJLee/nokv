@@ -18,16 +18,16 @@ class NoKvEditor implements SharedPreferences.Editor {
 	private final Set<String> mDelete = new HashSet<>();
 	private boolean mClear = false;
 	private final Set<SharedPreferences.OnSharedPreferenceChangeListener> mListeners;
-	private Object mLock;
+	private final SharedPreferences mLock;
 
-	NoKvEditor(Object lock, long ptr, Set<SharedPreferences.OnSharedPreferenceChangeListener> listeners) {
+	NoKvEditor(SharedPreferences lock, long ptr, Set<SharedPreferences.OnSharedPreferenceChangeListener> listeners) {
 		mLock = lock;
 		mPtr = ptr;
 		mListeners = listeners;
 		mModify = new HashMap<>();
 	}
 
-	NoKvEditor(Map<String, Object> values, Object lock, long ptr, Set<SharedPreferences.OnSharedPreferenceChangeListener> listeners) {
+	NoKvEditor(Map<String, Object> values, SharedPreferences lock, long ptr, Set<SharedPreferences.OnSharedPreferenceChangeListener> listeners) {
 		mLock = lock;
 		mPtr = ptr;
 		mListeners = listeners;
@@ -88,6 +88,8 @@ class NoKvEditor implements SharedPreferences.Editor {
 			return false;
 		}
 
+		Set<String> changes = mListeners == null || mListeners.isEmpty() ? null : new HashSet<>();
+
 		try {
 			if (mClear && !nativeClear(mPtr)) {
 				return false;
@@ -103,10 +105,18 @@ class NoKvEditor implements SharedPreferences.Editor {
 				}
 			}
 
+			if (changes != null) {
+				changes.addAll(mDelete);
+			}
+
 			for (Map.Entry<String, Object> entry : mModify.entrySet()) {
 				String key = entry.getKey();
 				if (TextUtils.isEmpty(key)) {
 					continue;
+				}
+
+				if (changes != null) {
+					changes.add(key);
 				}
 
 				Object value = entry.getValue();
@@ -139,11 +149,17 @@ class NoKvEditor implements SharedPreferences.Editor {
 						return false;
 					}
 				}
-				// todo unknown
 			}
 		} finally {
 			nativeEndTransaction(mPtr);
 		}
+
+		// reset state
+		mClear = false;
+		mModify.clear();
+		mDelete.clear();
+
+		notifyCommitSubmit(changes);
 
 		return true;
 	}
@@ -175,7 +191,17 @@ class NoKvEditor implements SharedPreferences.Editor {
 
 	private static native boolean nativePutNull(long ptr, String key);
 
-	private void notifyCommitSubmit() {
+	private void notifyCommitSubmit(Set<String> changes) {
+		if (changes == null || mListeners == null) {
+			return;
+		}
 
+		synchronized (mLock) {
+			for (String key : changes) {
+				for (SharedPreferences.OnSharedPreferenceChangeListener listener : mListeners) {
+					listener.onSharedPreferenceChanged(mLock, key);
+				}
+			}
+		}
 	}
 }

@@ -117,7 +117,7 @@ public class NoKV implements SharedPreferences {
 
 	@Override
 	public Editor edit() {
-		return new NoKvEditor(mPtr, mListeners);
+		return new NoKvEditor(this, mPtr, mListeners);
 	}
 
 	@Override
@@ -182,7 +182,7 @@ public class NoKV implements SharedPreferences {
 			return false;
 		}
 
-		Editor editor = new NoKvEditor(values, mPtr, mListeners);
+		Editor editor = new NoKvEditor(values, this, mPtr, mListeners);
 		return editor.commit();
 	}
 
