@@ -102,18 +102,14 @@ void read_proc(char *argv[], int start, int end)
     int count = 0;
     for (int i = start; i < end; ++i)
     {
-        ScopedLock<KV, false> lock(*kv);
-        kv->reload_if(); /* key */
-        char key[6] = {0};
+        ScopedLock<KV, true> lock(*kv);
+        char key[12] = {0};
         sprintf(key, "%011d", i);
-        kv->put_string(key, demo_str);
-        const char* v = nullptr;
-        if (kv->get_string(key, v) == 0)
-        {
+        const char *v = nullptr;
+        if (kv->get_string(key, v) == 0) {
             ++count;
-            if (strncmp(v, demo_str, 11))
-            {
-                std::cerr << "check value failed -> [" << v << "][" << demo_str << "]"  << std::endl;
+            if (strncmp(v, demo_str, 11)) {
+                std::cerr << "check value failed -> [" << v << "][" << demo_str << "]" << std::endl;
                 exit(1);
             }
         }
