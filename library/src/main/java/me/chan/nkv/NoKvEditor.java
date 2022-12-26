@@ -18,14 +18,17 @@ class NoKvEditor implements SharedPreferences.Editor {
 	private final Set<String> mDelete = new HashSet<>();
 	private boolean mClear = false;
 	private final Set<SharedPreferences.OnSharedPreferenceChangeListener> mListeners;
+	private Object mLock;
 
-	NoKvEditor(long ptr, Set<SharedPreferences.OnSharedPreferenceChangeListener> listeners) {
+	NoKvEditor(Object lock, long ptr, Set<SharedPreferences.OnSharedPreferenceChangeListener> listeners) {
+		mLock = lock;
 		mPtr = ptr;
 		mListeners = listeners;
 		mModify = new HashMap<>();
 	}
 
-	NoKvEditor(Map<String, Object> values, long ptr, Set<SharedPreferences.OnSharedPreferenceChangeListener> listeners) {
+	NoKvEditor(Map<String, Object> values, Object lock, long ptr, Set<SharedPreferences.OnSharedPreferenceChangeListener> listeners) {
+		mLock = lock;
 		mPtr = ptr;
 		mListeners = listeners;
 		mModify = values;
@@ -171,4 +174,8 @@ class NoKvEditor implements SharedPreferences.Editor {
 	private static native boolean nativePutBoolean(long ptr, String key, boolean value);
 
 	private static native boolean nativePutNull(long ptr, String key);
+
+	private void notifyCommitSubmit() {
+
+	}
 }
