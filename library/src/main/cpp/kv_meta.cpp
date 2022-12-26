@@ -18,9 +18,14 @@ namespace nokv {
     }
 
     KVMeta KVMeta::next_seq(int fd) {
+#ifdef linux
         struct timespec ts = {};
         clock_gettime(CLOCK_REALTIME, &ts);
+        if (seq_.tv_sec == ts.tv_sec) {
+            seq_.tv_sec++;
+        }
         futimens(fd, &ts);
+#endif
         return get_seq(fd);
     }
 

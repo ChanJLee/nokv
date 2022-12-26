@@ -24,7 +24,7 @@ namespace nokv {
     void KV::flush() {
         map_.sync();
         ::msync(buf_, map_.capacity(), MS_SYNC);
-        meta_ = KVMeta::next_seq(fd_);
+        meta_ = meta_.next_seq(fd_);
     }
 
     void KV::close() {
