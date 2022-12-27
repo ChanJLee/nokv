@@ -74,5 +74,24 @@ public class MainActivity extends AppCompatActivity {
 				}, "FuckOff").start();
 			}
 		});
+
+		findViewById(R.id.btn2).setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				SharedPreferences sharedPreferences = NoKV.create("demo", MODE_PRIVATE);
+				SharedPreferences.Editor editor = sharedPreferences.edit();
+				editor.putString("f1", "xxx");
+				editor.putString("f2", "yyy");
+				editor.putInt("f3", 1234);
+				editor.commit();
+			}
+		});
+
+		findViewById(R.id.btn3).setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+
+			}
+		});
 	}
 }

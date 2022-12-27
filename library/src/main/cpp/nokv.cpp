@@ -99,11 +99,13 @@ namespace nokv {
         kv->bind_buf(mem, st.st_size);
         if (check_kv(kv)) {
             LOGD("check kv failed: %s", name);
+#ifdef NKV_UNIT_TEST
             kv->close();
             lock.~ScopedLock<nokv::Lock, false>();
             delete kv;
             ::remove(file);
             return nullptr;
+#endif
         }
 
         return kv;
