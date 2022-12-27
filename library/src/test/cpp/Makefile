@@ -35,3 +35,5 @@ main.o:
 clean:
 	-rm *.o
 	-rm main
+	-rm multi_process
+	-rm read_all
