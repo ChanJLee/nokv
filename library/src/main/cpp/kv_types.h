@@ -8,6 +8,14 @@
 #include <inttypes.h>
 #include <stddef.h>
 
+// boolean 1
+// byte 1
+// short 2
+// int 4
+// long 8
+// float 4
+// string & vec == dysize
+
 namespace nokv {
     typedef unsigned char byte_t;
     typedef byte_t kv_type_t;
@@ -104,6 +112,25 @@ namespace nokv {
         int put_string(const kv_string_t &);
 
         void resize();
+    };
+
+    union ref_t {
+        void *ref;
+        ptrdiff_t offset;
+    };
+
+    struct slot_t {
+        int16_t type;
+        int16_t vec;
+        size_t size;
+        union ref_t ref;
+    };
+
+    struct kv_header {
+        pthread_mutex_t mutex;
+        int initialized;
+        int counter;
+        size_t size;
     };
 }
 #endif //NKV_KV_TYPES_H
