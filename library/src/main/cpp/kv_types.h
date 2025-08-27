@@ -113,24 +113,5 @@ namespace nokv {
 
         void resize();
     };
-
-    union ref_t {
-        void *ref;
-        ptrdiff_t offset;
-    };
-
-    struct slot_t {
-        int16_t type;
-        int16_t vec;
-        size_t size;
-        union ref_t ref;
-    };
-
-    struct kv_header {
-        pthread_mutex_t mutex;
-        int initialized;
-        int counter;
-        size_t size;
-    };
 }
 #endif //NKV_KV_TYPES_H

@@ -24,7 +24,7 @@ namespace mm {
         }
 
         // 3. mmap 文件
-        ShmMutex* shm_ptr = (ShmMutex*) mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+        auto shm_ptr = (ShmMutex *) mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
         if (shm_ptr == MAP_FAILED) {
             perror("mmap");
             close(fd);
