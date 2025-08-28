@@ -381,6 +381,7 @@ JNIEXPORT void JNICALL
 Java_me_chan_nkv_NoKV_nativeInitV2(JNIEnv *env, jclass clazz, jstring ws) {
     DEF_C_STR(env, ws, ws_path);
     gMem = mm::Memory::create(ws_path, 1024 * 1024);
+    LOGD("init %p", gMem);
 }
 
 extern "C"
