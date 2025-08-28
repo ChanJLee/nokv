@@ -28,6 +28,8 @@ add_library( # Sets the name of the library.
         kv_cache.cpp
         nokv.cpp
         os/boot.cpp
+        os/lock.cpp
+        mm/mm.cpp
         jni.cpp)
 
 # Searches for a specified prebuilt library and stores the path as a

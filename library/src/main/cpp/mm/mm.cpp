@@ -1,42 +1,106 @@
 #include "mm.h"
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
-#include <string.h>
-#include <errno.h>
+#include <cstring>
+#include <cerrno>
+#include <sys/stat.h>
+#include "../os/lock.h"
+#include "../kv_log.h"
 
 namespace mm {
 
+    class ScopedFileLock {
+    private:
+        int _fd;
+        FileLock *_lock;
+    public:
+        ScopedFileLock(const std::string &path) : _lock(nullptr) {
+            _fd = open(path.c_str(), O_RDWR | O_CREAT | O_CLOEXEC, S_IWUSR | S_IRUSR);
+            _lock = _fd >= 0 ? new FileLock(_fd) : nullptr;
+            if (_lock) {
+                _lock->lock(false);
+            }
+        }
+
+        ~ScopedFileLock() {
+            if (_fd >= 0) {
+                close(_fd);
+                _lock->unlock(false);
+                delete _lock;
+            }
+        }
+
+        const bool valid() const { return _fd >= 0; }
+
+        int fd() const {
+            return _fd;
+        }
+    };
+
+    class ScopedMmap {
+        void *_kv;
+        size_t _size;
+    public:
+        ScopedMmap(int fd, size_t size) : _kv(
+                mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0)), _size(size) {
+        }
+
+        ~ScopedMmap() {
+            if (_kv != MAP_FAILED) {
+                munmap(_kv, _size);
+            }
+        }
+
+        void *get() const { return _kv; }
+    };
+
     Memory *Memory::create(const std::string &path, size_t size) {
-        int fd = open(path.c_str(), O_RDWR | O_CREAT, 0666);
-        if (fd < 0) {
-            perror("open");
+        char boot_id[BOOT_ID_SIZE] = {0};
+        if (get_boot_id(boot_id, sizeof(boot_id)) != 0) {
+            fprintf(stderr, "Failed to get boot_id\n");
             return nullptr;
         }
 
-        // 2. 设置文件大小
-        if (ftruncate(fd, size) == -1) {
-            perror("ftruncate");
-            close(fd);
+        ScopedFileLock file(path);
+        if (!file.valid()) {
+            LOGD("open file %s failed: %s", path.c_str(), strerror(errno));
             return nullptr;
         }
 
-        // 3. mmap 文件
-        auto shm_ptr = (ShmMutex *) mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-        if (shm_ptr == MAP_FAILED) {
+        int fd = file.fd();
+        struct stat st{};
+        if (fstat(fd, &st) != 0) {
+            return nullptr;
+        }
+
+        bool new_file = st.st_size == 0;
+        if (new_file) {
+            auto pagesize = getpagesize();
+            if (size < pagesize) {
+                size = pagesize;
+            } else if (size % pagesize != 0) {
+                size = ((size / pagesize) + 1) * pagesize;
+            }
+
+            st.st_size = size;
+            if (ftruncate(fd, st.st_size) != 0) {
+                perror("ftruncate");
+                close(fd);
+                return nullptr;
+            }
+        }
+
+        ScopedMmap m(fd, st.st_size);
+        auto nokv = (Nokv *) m.get();
+        if (nokv == MAP_FAILED) {
             perror("mmap");
-            close(fd);
             return nullptr;
         }
 
-        close(fd); // mmap 后可以关闭 fd
-
-        // 4. 安全初始化 mutex
-        // 只有第一个进程初始化，使用原子操作防止 race
-        int expected = 0;
-        if (__sync_bool_compare_and_swap(&shm_ptr->initialized, expected, 1)) {
+        if (memcmp(nokv->boot_id, boot_id, BOOT_ID_SIZE) != 0) {
             pthread_mutexattr_t attr;
             if (pthread_mutexattr_init(&attr) != 0) {
                 perror("pthread_mutexattr_init");
@@ -46,22 +110,23 @@ namespace mm {
                 perror("pthread_mutexattr_setpshared");
                 return nullptr;
             }
-            if (pthread_mutex_init(&shm_ptr->mutex, &attr) != 0) {
+#ifdef PTHREAD_MUTEX_ROBUST
+            LOGD("set robust");
+            pthread_mutexattr_setrobust(&attr, PTHREAD_MUTEX_ROBUST);
+#endif
+            pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
+            if (pthread_mutex_init(&nokv->mutex, &attr) != 0) {
                 perror("pthread_mutex_init");
                 return nullptr;
             }
             pthread_mutexattr_destroy(&attr);
-
-            shm_ptr->counter = 0;
-            printf("Process %d initialized shared memory.\n", getpid());
-        } else {
-            // 等待初始化完成
-            while (shm_ptr->initialized != 1) {
-                usleep(1000);
+            strncpy(nokv->boot_id, boot_id, BOOT_ID_SIZE);
+            nokv->boot_id[BOOT_ID_SIZE - 1] = '\0';
+            if (msync(nokv, sizeof(Nokv), MS_SYNC) != 0) {
+                perror("msync"); /* proceed anyway */
             }
-            printf("Process %d attached to existing shared memory.\n", getpid());
         }
 
-        return new Memory(shm_ptr, size);
+        return new Memory(nokv, size);
     }
 }

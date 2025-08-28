@@ -3,21 +3,26 @@
 
 #include <string>
 #include <pthread.h>
+#include "../os/boot.h"
 
 namespace mm {
 
     class Memory {
-        struct ShmMutex {
-            pthread_mutex_t mutex;
-            int counter;
-            int initialized; // 0 = 未初始化, 1 = 初始化完成
+        struct Nokv {
+            char magic[4] = {'N', 'N', 'K', 'V'};
+            char boot_id[BOOT_ID_SIZE] = {0};
+            pthread_mutex_t mutex{};
         };
-        ShmMutex* _mutex;
+
+        Nokv *_kv;
         size_t _size;
 
-        Memory(ShmMutex* mutex, size_t size): _mutex(mutex), _size(size) {}
+        Memory(Nokv *kv, size_t size) : _kv(kv), _size(size) {}
+
     public:
-        static Memory *create(const std::string &file);
+        void *buffer() const { return _kv + sizeof(Nokv); }
+
+        static Memory *create(const std::string &file, size_t size);
     };
 }
 

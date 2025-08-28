@@ -7,6 +7,8 @@
 
 #include <stddef.h>
 
+#define BOOT_ID_SIZE 64
+
 #ifdef __cplusplus
 extern "C" {
 #endif
