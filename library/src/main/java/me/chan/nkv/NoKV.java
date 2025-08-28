@@ -168,6 +168,10 @@ public class NoKV implements SharedPreferences {
 		Log.e("NoKV", msg);
 	}
 
+	public static native void nativeInitV2(String ws);
+
+	public static native void nativeTestV2();
+
 	/**
 	 * @param sharedPreferences sp
 	 * @return 是否迁移成功

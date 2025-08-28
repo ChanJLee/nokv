@@ -63,6 +63,7 @@ namespace mm {
             fprintf(stderr, "Failed to get boot_id\n");
             return nullptr;
         }
+        LOGD("boot id %s", boot_id);
 
         ScopedFileLock file(path);
         if (!file.valid()) {
@@ -85,10 +86,10 @@ namespace mm {
                 size = ((size / pagesize) + 1) * pagesize;
             }
 
+            LOGD("page size %d, resize to %d", pagesize, size);
             st.st_size = size;
             if (ftruncate(fd, st.st_size) != 0) {
                 perror("ftruncate");
-                close(fd);
                 return nullptr;
             }
         }
@@ -96,25 +97,33 @@ namespace mm {
         ScopedMmap m(fd, st.st_size);
         auto nokv = (Nokv *) m.get();
         if (nokv == MAP_FAILED) {
-            perror("mmap");
+            LOGD("mmap failed: %s", strerror(errno));
             return nullptr;
         }
 
+        LOGD("file boot id %s", nokv->boot_id);
         if (memcmp(nokv->boot_id, boot_id, BOOT_ID_SIZE) != 0) {
+            LOGD("init mutex %d", getpid());
             pthread_mutexattr_t attr;
             if (pthread_mutexattr_init(&attr) != 0) {
-                perror("pthread_mutexattr_init");
+                LOGD("pthread_mutexattr_init failed");
                 return nullptr;
             }
             if (pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED) != 0) {
-                perror("pthread_mutexattr_setpshared");
+                LOGD("set pshared failed");
                 return nullptr;
             }
 #ifdef PTHREAD_MUTEX_ROBUST
             LOGD("set robust");
-            pthread_mutexattr_setrobust(&attr, PTHREAD_MUTEX_ROBUST);
+            if (pthread_mutexattr_setrobust(&attr, PTHREAD_MUTEX_ROBUST) != 0) {
+                LOGD("set robust failed");
+                return nullptr;
+            }
 #endif
-            pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
+            if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK) != 0) {
+                LOGD("set type failed");
+                return nullptr;
+            }
             if (pthread_mutex_init(&nokv->mutex, &attr) != 0) {
                 perror("pthread_mutex_init");
                 return nullptr;
@@ -123,10 +132,20 @@ namespace mm {
             strncpy(nokv->boot_id, boot_id, BOOT_ID_SIZE);
             nokv->boot_id[BOOT_ID_SIZE - 1] = '\0';
             if (msync(nokv, sizeof(Nokv), MS_SYNC) != 0) {
-                perror("msync"); /* proceed anyway */
+                LOGD("msync failed: %s", strerror(errno));
+                return nullptr;
             }
         }
 
+        LOGD("create memory %s, size %d, process %d did it", path.c_str(), size, getpid());
         return new Memory(nokv, size);
+    }
+
+    bool Memory::unlock() {
+        return pthread_mutex_unlock(&_kv->mutex) == 0;
+    }
+
+    bool Memory::lock() {
+        return pthread_mutex_lock(&_kv->mutex) == 0;
     }
 }

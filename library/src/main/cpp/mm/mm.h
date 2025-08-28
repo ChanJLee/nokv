@@ -25,6 +25,10 @@ namespace mm {
             return ptr + sizeof(Nokv);
         }
 
+        bool lock();
+
+        bool unlock();
+
         static Memory *create(const std::string &file, size_t size);
 
         static void destroy(Memory *mem) {

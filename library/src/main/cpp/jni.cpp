@@ -371,3 +371,31 @@ Java_me_chan_nkv_NoKvEditor_nativePutNull(JNIEnv *env, jclass clazz, jlong ptr, 
 
     return kv->put_null(k) == 0;
 }
+
+#include "mm/mm.h"
+
+mm::Memory *gMem = nullptr;
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_me_chan_nkv_NoKV_nativeInitV2(JNIEnv *env, jclass clazz, jstring ws) {
+    DEF_C_STR(env, ws, ws_path);
+    gMem = mm::Memory::create(ws_path, 1024 * 1024);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_me_chan_nkv_NoKV_nativeTestV2(JNIEnv *env, jclass clazz) {
+    if (!gMem->lock()) {
+        LOGD(">>>>>>> lock failed");
+        return;
+    }
+
+    int *ptr = (int *) gMem->buffer();
+    ++(*ptr);
+    LOGD(">>>>>>> count: %d", *ptr);
+
+    if (!gMem->unlock()) {
+        LOGD("<<<<<<< unlock failed");
+    }
+}
