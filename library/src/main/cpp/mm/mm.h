@@ -23,6 +23,10 @@ namespace mm {
         void *buffer() const { return _kv + sizeof(Nokv); }
 
         static Memory *create(const std::string &file, size_t size);
+
+        static void destroy(Memory *mem) {
+            delete mem;
+        }
     };
 }
 
