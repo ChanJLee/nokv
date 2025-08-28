@@ -20,7 +20,9 @@ namespace mm {
         Memory(Nokv *kv, size_t size) : _kv(kv), _size(size) {}
 
     public:
-        void *buffer() const { return _kv + sizeof(Nokv); }
+        void *buffer() const {
+            char* ptr = reinterpret_cast<char *>(_kv);
+            return ptr + sizeof(Nokv); }
 
         static Memory *create(const std::string &file, size_t size);
 
