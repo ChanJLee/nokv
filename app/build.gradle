@@ -4,12 +4,12 @@ plugins {
 
 android {
     namespace 'com.example.nkv'
-    compileSdk 32
+    compileSdk 33
 
     defaultConfig {
         applicationId "com.example.nkv"
-        minSdk 21
-        targetSdk 32
+        minSdk 25
+        targetSdk 33
         versionCode 1
         versionName "1.0"
 
