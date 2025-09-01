@@ -88,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
 		findViewById(R.id.btn3).setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				NoKV.nativeTestV2();
+				NoKV.nativeTestV2(MyApplication.PTR);
 				startService(new Intent(MainActivity.this, Writer1Service.class));
 				startService(new Intent(MainActivity.this, Writer2Service.class));
 			}

@@ -20,7 +20,7 @@ public class BaseService extends Service {
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		new Thread(() -> {
 			for (int i = 0; i < 10000; ++i) {
-				NoKV.nativeTestV2();
+				NoKV.nativeTestV2(MyApplication.PTR);
 			}
 		}).start();
 
