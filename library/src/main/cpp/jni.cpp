@@ -376,9 +376,9 @@ Java_me_chan_nkv_NoKvEditor_nativePutNull(JNIEnv *env, jclass clazz, jlong ptr, 
 
 extern "C"
 JNIEXPORT jlong JNICALL
-Java_me_chan_nkv_NoKV_nativeInitV2(JNIEnv *env, jclass clazz, jstring ws) {
+Java_me_chan_nkv_NoKV_nativeInitV2(JNIEnv *env, jclass clazz, jstring ws, jboolean init) {
     DEF_C_STR(env, ws, ws_path);
-    auto m = mm::Memory::create(ws_path, 1024 * 1024);
+    auto m = mm::Memory::create(ws_path, 1024, init);
     LOGD("init %p", m);
     return reinterpret_cast<jlong>(m);
 }
@@ -394,9 +394,16 @@ Java_me_chan_nkv_NoKV_nativeTestV2(JNIEnv *env, jclass clazz, jlong ref) {
 
     int *ptr = (int *) m->buffer();
     ++(*ptr);
-    LOGD(">>>>>>> count: %d", *ptr);
+    m->sync();
 
     if (!m->unlock()) {
         LOGD("<<<<<<< unlock failed");
     }
+}
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_me_chan_nkv_NoKV_getNativeTestV2(JNIEnv *env, jclass clazz, jlong ptr) {
+    auto m = reinterpret_cast<mm::Memory *>(ptr);
+    return *(int *) m->buffer();
 }

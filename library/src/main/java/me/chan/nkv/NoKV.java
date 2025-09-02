@@ -168,9 +168,11 @@ public class NoKV implements SharedPreferences {
 		Log.e("NoKV", msg);
 	}
 
-	public static native long nativeInitV2(String ws);
+	public static native long nativeInitV2(String ws, boolean mainProgress);
 
 	public static native void nativeTestV2(long ptr);
+
+	public static native int getNativeTestV2(long ptr);
 
 	/**
 	 * @param sharedPreferences sp

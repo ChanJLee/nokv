@@ -57,7 +57,7 @@ namespace mm {
         void *get() const { return _kv; }
     };
 
-    Memory *Memory::create(const std::string &path, size_t size) {
+    Memory *Memory::create(const std::string &path, size_t size, bool init) {
         char boot_id[BOOT_ID_SIZE] = {0};
         if (get_boot_id(boot_id, sizeof(boot_id)) != 0) {
             fprintf(stderr, "Failed to get boot_id\n");
@@ -78,7 +78,7 @@ namespace mm {
         }
 
         bool new_file = st.st_size == 0;
-        if (new_file) {
+        if (init) {
             auto pagesize = getpagesize();
             if (size < pagesize) {
                 size = pagesize;
@@ -102,7 +102,7 @@ namespace mm {
         }
 
         LOGD("file boot id %s", nokv->boot_id);
-        if (memcmp(nokv->boot_id, boot_id, BOOT_ID_SIZE) != 0) {
+        if (init) {
             LOGD("init mutex %d", getpid());
             pthread_mutexattr_t attr;
             if (pthread_mutexattr_init(&attr) != 0) {
@@ -147,5 +147,9 @@ namespace mm {
 
     bool Memory::lock() {
         return pthread_mutex_lock(&_kv->mutex) == 0;
+    }
+
+    void Memory::sync() {
+        msync(_kv, _size, MS_SYNC);
     }
 }

@@ -3,6 +3,7 @@ package com.example.nkv;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -22,6 +23,7 @@ public class BaseService extends Service {
 			for (int i = 0; i < 10000; ++i) {
 				NoKV.nativeTestV2(MyApplication.PTR);
 			}
+			Log.d("NoKV", ">>>>>>>>>>>>>>>>>>> service test done <<<<<<<<<<<<<<<<<<<<" + getApplication().getProcessName() + " " + NoKV.getNativeTestV2(MyApplication.PTR));
 		}).start();
 
 		return super.onStartCommand(intent, flags, startId);

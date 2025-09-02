@@ -2,6 +2,7 @@ package com.example.nkv;
 
 import android.app.Application;
 import android.content.Context;
+import android.text.TextUtils;
 
 import java.io.File;
 
@@ -17,6 +18,6 @@ public class MyApplication extends Application {
 		NoKV.init(this);
 		File ws = getDir("nokv", Context.MODE_PRIVATE);
 		File f = new File(ws, "testdb");
-		PTR = NoKV.nativeInitV2(f.getAbsolutePath());
+		PTR = NoKV.nativeInitV2(f.getAbsolutePath(), TextUtils.equals(getProcessName(), getPackageName()));
 	}
 }

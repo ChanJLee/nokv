@@ -29,7 +29,9 @@ namespace mm {
 
         bool unlock();
 
-        static Memory *create(const std::string &file, size_t size);
+        void sync();
+
+        static Memory *create(const std::string &file, size_t size, bool init);
 
         static void destroy(Memory *mem) {
             delete mem;
