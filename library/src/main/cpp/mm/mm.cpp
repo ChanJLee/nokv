@@ -18,7 +18,7 @@ namespace mm {
         FileLock *_lock;
     public:
         ScopedFileLock(const std::string &path) : _lock(nullptr) {
-            _fd = open(path.c_str(), O_RDWR | O_CREAT | O_CLOEXEC, S_IWUSR | S_IRUSR);
+            _fd = shm_open(path.c_str(), O_RDWR | O_CREAT | O_CLOEXEC, S_IWUSR | S_IRUSR);
             _lock = _fd >= 0 ? new FileLock(_fd) : nullptr;
             if (_lock) {
                 _lock->lock(false);
